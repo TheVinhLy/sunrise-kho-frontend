@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getChungTu, addChungTu, updateChungTu, deleteChungTu, getDanhMuc } from '../utils/api';
 
 const today = () => new Date().toISOString().slice(0, 10);
+const firstOfMonth = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+};
 const BLANK = { ngay_ghi_so: today(), so_chung_tu: '', ngay_chung_tu: today(), dien_giai: '', so_luong_nhap: '', so_luong_xuat: '', ma_vat_tu: '', ten_nha_cc: '', nguoi_nhan_giao: '', noi_dung: '', dia_chi: '' };
 
 const fmt = n => n ? Number(n).toLocaleString('vi-VN') : '';
@@ -11,7 +15,7 @@ export default function NhapLieu() {
   const [dm, setDm] = useState([]);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(BLANK);
-  const [filter, setFilter] = useState({ tu_ngay: '', den_ngay: '', ma_vat_tu: '', loai: '' });
+  const [filter, setFilter] = useState({ tu_ngay: firstOfMonth(), den_ngay: today(), ma_vat_tu: '', loai: '' });
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -69,8 +73,8 @@ export default function NhapLieu() {
   };
 
   // Thống kê
-  const tongNhap = rows.reduce((s, r) => s + (r.so_luong_nhap || 0), 0);
-  const tongXuat = rows.reduce((s, r) => s + (r.so_luong_xuat || 0), 0);
+  const tongNhap = rows.reduce((s, r) => s + Number(r.so_luong_nhap || 0), 0);
+  const tongXuat = rows.reduce((s, r) => s + Number(r.so_luong_xuat || 0), 0);
 
   // Phân trang
   const totalPages = Math.ceil(rows.length / PER);
@@ -128,7 +132,7 @@ export default function NhapLieu() {
                 <option value="xuat">Xuất</option>
               </select>
             </div>
-            <button className="btn btn-ghost" onClick={() => setFilter({ tu_ngay: '', den_ngay: '', ma_vat_tu: '', loai: '' })}>Xóa lọc</button>
+            <button className="btn btn-ghost" onClick={() => setFilter({ tu_ngay: firstOfMonth(), den_ngay: today(), ma_vat_tu: '', loai: '' })}>Xóa lọc</button>
           </div>
 
           {loading ? <div className="spinner" /> : (
