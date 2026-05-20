@@ -49,7 +49,7 @@ export default function Menu({ cty }) {
       </div>
 
       <div style={{ marginTop: 28, padding: '14px 18px', background: '#f9f9f9', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 12, color: '#888' }}>
-        💡 Mọi dữ liệu được lưu vào SQLite database · Backup: tải file <code>sunrise_kho.db</code> về máy
+        💡 Mọi dữ liệu được lưu vào PostgreSQL (Supabase) · Backup tự động mỗi ngày · An toàn &amp; bảo mật
       </div>
     </div>
   );

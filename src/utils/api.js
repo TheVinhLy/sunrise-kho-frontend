@@ -41,3 +41,19 @@ export const getChiTiet = (maVatTu, params = {}) => {
 
 export const getPhieu = (soChungTu) => api(`/api/phieu/${encodeURIComponent(soChungTu)}`);
 export const getSoChungTu = () => api('/api/so-chung-tu');
+
+// Auth
+export const login = (data) => api('/api/auth/login', { method: 'POST', body: data });
+
+// Users
+export const getUsers = () => api('/api/users');
+export const addUser  = (data) => api('/api/users', { method: 'POST', body: data });
+export const updateUser = (id, data) => api(`/api/users/${id}`, { method: 'PUT', body: data });
+export const deleteUser = (id) => api(`/api/users/${id}`, { method: 'DELETE' });
+export const getUserPerms = (id) => api(`/api/users/${id}/permissions`);
+export const setUserPerms = (id, menus) => api(`/api/users/${id}/permissions`, { method: 'PUT', body: { menus } });
+
+// DVT
+export const getDvt    = () => api('/api/dvt');
+export const addDvt    = (data) => api('/api/dvt', { method: 'POST', body: data });
+export const deleteDvt = (id) => api(`/api/dvt/${id}`, { method: 'DELETE' });

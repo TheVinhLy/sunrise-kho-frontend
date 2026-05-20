@@ -31,10 +31,10 @@ export default function NhapXuatTon() {
   );
 
   const totals = filtered.reduce((acc, r) => ({
-    ton_dau: acc.ton_dau + (r.ton_dau_ky || 0),
-    nhap:    acc.nhap    + (r.tong_nhap || 0),
-    xuat:    acc.xuat    + (r.tong_xuat || 0),
-    cuoi:    acc.cuoi    + (r.ton_cuoi_ky || 0),
+    ton_dau: acc.ton_dau + Number(r.ton_dau_ky  || 0),
+    nhap:    acc.nhap    + Number(r.tong_nhap    || 0),
+    xuat:    acc.xuat    + Number(r.tong_xuat    || 0),
+    cuoi:    acc.cuoi    + Number(r.ton_cuoi_ky  || 0),
   }), { ton_dau: 0, nhap: 0, xuat: 0, cuoi: 0 });
 
   const handlePrint = () => {

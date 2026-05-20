@@ -1,27 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
 import './index.css';
 
-import Menu from './pages/Menu';
-import CongTy from './pages/CongTy';
-import DanhMuc from './pages/DanhMuc';
-import NhapLieu from './pages/NhapLieu';
+import Login      from './pages/Login';
+import Menu       from './pages/Menu';
+import CongTy     from './pages/CongTy';
+import DanhMuc    from './pages/DanhMuc';
+import NhapLieu   from './pages/NhapLieu';
 import NhapXuatTon from './pages/NhapXuatTon';
-import ChiTiet from './pages/ChiTiet';
-import InPhieu from './pages/InPhieu';
+import ChiTiet    from './pages/ChiTiet';
+import InPhieu    from './pages/InPhieu';
+import QuanLyUser from './pages/QuanLyUser';
 import { getCongTy } from './utils/api';
 
-const NAV = [
-  { to: '/',         icon: '🏠', label: 'Menu chính' },
-  { to: '/cong-ty',  icon: '🏢', label: 'Thông tin DN' },
-  { to: '/danh-muc', icon: '📦', label: 'Danh mục VTHH' },
-  { to: '/nhap-lieu',icon: '✏️',  label: 'Nhập liệu' },
-  { to: '/nxt',      icon: '📊', label: 'Nhập - Xuất - Tồn' },
-  { to: '/chi-tiet', icon: '🔍', label: 'Chi tiết N-X-T' },
-  { to: '/in-phieu', icon: '🖨️', label: 'In phiếu' },
+const ALL_NAV = [
+  { to: '/',            icon: '🏠', label: 'Menu chính',      key: null },
+  { to: '/cong-ty',    icon: '🏢', label: 'Thông tin DN',     key: 'cong-ty' },
+  { to: '/danh-muc',   icon: '📦', label: 'Danh mục VTHH',   key: 'danh-muc' },
+  { to: '/nhap-lieu',  icon: '✏️',  label: 'Nhập liệu',       key: 'nhap-lieu' },
+  { to: '/nxt',        icon: '📊', label: 'Nhập - Xuất - Tồn',key: 'nxt' },
+  { to: '/chi-tiet',   icon: '🔍', label: 'Chi tiết N-X-T',  key: 'chi-tiet' },
+  { to: '/in-phieu',   icon: '🖨️', label: 'In phiếu',         key: 'in-phieu' },
+  { to: '/quan-ly-user',icon:'👥', label: 'Quản lý User',     key: '__admin__' },
 ];
 
-function Sidebar({ cty }) {
+function Sidebar({ cty, user, onLogout }) {
+  const isAdmin = user?.role === 'admin';
+  const menus   = user?.menus || [];
+
+  const navItems = ALL_NAV.filter(n => {
+    if (!n.key) return true;                    // Menu chính — luôn hiện
+    if (n.key === '__admin__') return isAdmin;  // Quản lý user — chỉ admin
+    return isAdmin || menus.includes(n.key);    // Các menu khác theo quyền
+  });
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -29,24 +41,35 @@ function Sidebar({ cty }) {
         <p>{cty?.ten_kho || 'Tô Ký'} · {cty?.nam || 2026}</p>
       </div>
       <nav>
-        {NAV.map(n => (
-          <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => isActive ? 'active' : ''}>
+        {navItems.map(n => (
+          <NavLink key={n.to} to={n.to} end={n.to === '/'}
+            className={({ isActive }) => isActive ? 'active' : ''}>
             <span className="icon">{n.icon}</span>
             {n.label}
           </NavLink>
         ))}
       </nav>
-      <div className="sidebar-footer">
-        CÔNG TY TNHH THỜI TRANG SUNRISE
+      <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span>👤 {user?.ho_ten || user?.username}</span>
+        <span style={{ fontSize: 10, color: '#5a9e78' }}>
+          {user?.role === 'admin' ? '👑 Quản trị viên' : '👤 Nhân viên'}
+        </span>
+        <button onClick={onLogout} style={{
+          marginTop: 6, padding: '5px 10px', background: 'transparent',
+          border: '1px solid #2d5c47', borderRadius: 4, color: '#7ec8a0',
+          cursor: 'pointer', fontSize: 12, fontFamily: 'inherit', textAlign: 'left',
+        }}>
+          🚪 Đăng xuất
+        </button>
       </div>
     </aside>
   );
 }
 
-function PageHeader() {
+function PageHeader({ user }) {
   const loc = useLocation();
-  const current = NAV.find(n => n.to === loc.pathname) || { label: 'Hệ thống quản lý kho' };
-  const now = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const current = ALL_NAV.find(n => n.to === loc.pathname) || { label: 'Hệ thống quản lý kho' };
+  const now = new Date().toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
   return (
     <div className="topbar">
       <span className="topbar-title">{current.icon} {current.label}</span>
@@ -55,25 +78,57 @@ function PageHeader() {
   );
 }
 
+// Guard route theo quyền
+function ProtectedRoute({ menuKey, user, children }) {
+  if (!user) return <Navigate to="/login" />;
+  if (user.role === 'admin') return children;
+  if (!menuKey) return children;
+  if (menuKey === '__admin__') return <Navigate to="/" />;
+  if (!user.menus?.includes(menuKey)) {
+    return (
+      <div style={{ textAlign:'center', padding:60, color:'#aaa' }}>
+        🔒 Bạn không có quyền truy cập trang này
+      </div>
+    );
+  }
+  return children;
+}
+
 export default function App() {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sk_user')); } catch { return null; }
+  });
   const [cty, setCty] = useState(null);
-  useEffect(() => { getCongTy().then(setCty).catch(() => {}); }, []);
+
+  useEffect(() => {
+    if (user) getCongTy().then(setCty).catch(() => {});
+  }, [user]);
+
+  const handleLogin = (u) => setUser(u);
+  const handleLogout = () => {
+    localStorage.removeItem('sk_user');
+    setUser(null);
+  };
+
+  if (!user) return <Login onLogin={handleLogin} />;
 
   return (
     <BrowserRouter>
       <div className="app">
-        <Sidebar cty={cty} />
+        <Sidebar cty={cty} user={user} onLogout={handleLogout} />
         <div className="main">
-          <PageHeader />
+          <PageHeader user={user} />
           <div className="content">
             <Routes>
-              <Route path="/"          element={<Menu cty={cty} />} />
-              <Route path="/cong-ty"   element={<CongTy onSave={setCty} />} />
-              <Route path="/danh-muc"  element={<DanhMuc />} />
-              <Route path="/nhap-lieu" element={<NhapLieu />} />
-              <Route path="/nxt"       element={<NhapXuatTon />} />
-              <Route path="/chi-tiet"  element={<ChiTiet />} />
-              <Route path="/in-phieu"  element={<InPhieu />} />
+              <Route path="/"              element={<Menu cty={cty} user={user} />} />
+              <Route path="/cong-ty"       element={<ProtectedRoute menuKey="cong-ty"    user={user}><CongTy onSave={setCty} /></ProtectedRoute>} />
+              <Route path="/danh-muc"      element={<ProtectedRoute menuKey="danh-muc"   user={user}><DanhMuc /></ProtectedRoute>} />
+              <Route path="/nhap-lieu"     element={<ProtectedRoute menuKey="nhap-lieu"  user={user}><NhapLieu /></ProtectedRoute>} />
+              <Route path="/nxt"           element={<ProtectedRoute menuKey="nxt"        user={user}><NhapXuatTon /></ProtectedRoute>} />
+              <Route path="/chi-tiet"      element={<ProtectedRoute menuKey="chi-tiet"   user={user}><ChiTiet /></ProtectedRoute>} />
+              <Route path="/in-phieu"      element={<ProtectedRoute menuKey="in-phieu"   user={user}><InPhieu /></ProtectedRoute>} />
+              <Route path="/quan-ly-user"  element={<ProtectedRoute menuKey="__admin__"  user={user}><QuanLyUser /></ProtectedRoute>} />
+              <Route path="*"              element={<Navigate to="/" />} />
             </Routes>
           </div>
         </div>

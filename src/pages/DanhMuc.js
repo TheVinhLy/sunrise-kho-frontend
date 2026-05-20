@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { getDanhMuc, addDanhMuc, updateDanhMuc, deleteDanhMuc } from '../utils/api';
+import { getDanhMuc, addDanhMuc, updateDanhMuc, deleteDanhMuc, getDvt, addDvt, deleteDvt } from '../utils/api';
 
 const BLANK = { ma_vat_tu: '', ten_vat_tu: '', dvt: 'Cái', so_luong_dau_ky: 0, ten_nha_cc: '', dia_chi_ncc: '', ghi_chu: '' };
 
 export default function DanhMuc() {
   const [rows, setRows] = useState([]);
+  const [dvtList, setDvtList] = useState([]);
+  const [newDvt, setNewDvt]   = useState('');
+  const [showDvt, setShowDvt] = useState(false);
   const [modal, setModal] = useState(null); // null | {mode:'add'|'edit', data}
   const [form, setForm] = useState(BLANK);
   const [search, setSearch] = useState('');
@@ -12,7 +15,8 @@ export default function DanhMuc() {
   const [loading, setLoading] = useState(true);
 
   const load = () => { setLoading(true); getDanhMuc().then(r => { setRows(r); setLoading(false); }).catch(e => { setErr(e.message); setLoading(false); }); };
-  useEffect(load, []);
+  const loadDvt = () => getDvt().then(setDvtList).catch(() => {});
+  useEffect(() => { load(); loadDvt(); }, []);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -116,9 +120,13 @@ export default function DanhMuc() {
                 </div>
                 <div className="form-group">
                   <label>Đơn vị tính</label>
-                  <select value={form.dvt} onChange={e => set('dvt', e.target.value)}>
-                    <option>Cái</option><option>Kg</option><option>Mét</option><option>Thùng</option><option>Hộp</option><option>Cuộn</option>
-                  </select>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <select value={form.dvt} onChange={e => set('dvt', e.target.value)} style={{ flex: 1 }}>
+                      {dvtList.map(d => <option key={d.id} value={d.ten_dvt}>{d.ten_dvt}</option>)}
+                    </select>
+                    <button type="button" className="btn btn-ghost btn-sm" title="Thêm ĐVT mới"
+                      onClick={() => setShowDvt(true)}>+</button>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>Số lượng đầu kỳ</label>
@@ -141,6 +149,53 @@ export default function DanhMuc() {
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={() => setModal(null)}>Hủy</button>
               <button className="btn btn-primary" onClick={save}>💾 Lưu</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDvt && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowDvt(false)}>
+          <div className="modal" style={{ maxWidth: 380 }}>
+            <div className="modal-header">
+              <h3>📏 Quản lý đơn vị tính</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowDvt(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <input value={newDvt} onChange={e => setNewDvt(e.target.value)}
+                  placeholder="Nhập ĐVT mới (VD: Cuộn, Bao...)"
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter' && newDvt.trim()) {
+                      await addDvt({ ten_dvt: newDvt.trim() }).catch(e => alert(e.message));
+                      setNewDvt(''); loadDvt();
+                    }
+                  }}
+                  style={{ flex:1, padding:'7px 10px', border:'1px solid #ccc', borderRadius:5, fontSize:13, fontFamily:'inherit' }}
+                />
+                <button className="btn btn-primary" onClick={async () => {
+                  if (!newDvt.trim()) return;
+                  await addDvt({ ten_dvt: newDvt.trim() }).catch(e => alert(e.message));
+                  setNewDvt(''); loadDvt();
+                }}>+ Thêm</button>
+              </div>
+              <div style={{ maxHeight: 280, overflowY: 'auto' }}>
+                {dvtList.map(d => (
+                  <div key={d.id} style={{
+                    display:'flex', justifyContent:'space-between', alignItems:'center',
+                    padding:'8px 12px', borderRadius:6, marginBottom:4, background:'#f5f5f5',
+                  }}>
+                    <span style={{ fontSize:14 }}>{d.ten_dvt}</span>
+                    <button className="btn btn-danger btn-sm" onClick={async () => {
+                      if (!window.confirm(`Xóa ĐVT "${d.ten_dvt}"?`)) return;
+                      await deleteDvt(d.id).catch(e => alert(e.message));
+                      loadDvt();
+                    }}>🗑️</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => setShowDvt(false)}>Đóng</button>
             </div>
           </div>
         </div>
