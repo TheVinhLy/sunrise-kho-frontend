@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getNhapXuatTon, getCongTy } from '../utils/api';
-import { printHtml, exportExcel, fmt, fmtD } from '../utils/printExcel';
+import { printContent, exportExcel, fmt, fmtD } from '../utils/printExcel';
 
 export default function NhapXuatTon() {
   const [rows, setRows]     = useState([]);
@@ -36,7 +36,6 @@ export default function NhapXuatTon() {
   const tuNgay  = filter.tu_ngay  || cty?.tu_ngay  || '';
   const denNgay = filter.den_ngay || cty?.den_ngay || '';
 
-  // ── IN ──────────────────────────────────────
   const handlePrint = () => {
     const rows_html = filtered.map((r, i) => `
       <tr>
@@ -50,7 +49,7 @@ export default function NhapXuatTon() {
         <td class="num" style="font-weight:bold;${Number(r.ton_cuoi_ky)<0?'color:red':''}">${fmt(r.ton_cuoi_ky)}</td>
       </tr>`).join('');
 
-    const content = `
+    printContent(`
       <p><b>${cty?.ten_cong_ty}</b></p>
       <p>${cty?.dia_chi}</p>
       <p>Tên kho: ${cty?.ten_kho}</p>
@@ -70,14 +69,13 @@ export default function NhapXuatTon() {
           <td class="num"><b>${fmt(totals.cuoi)}</b></td>
         </tr></tfoot>
       </table>
-      <div class="sig-row" style="margin-top:36px">
+      <div class="sig-row">
         ${['Người lập biểu','Thủ kho','Kế toán trưởng','Thủ trưởng đơn vị'].map(t =>
-          `<div><p><b>${t}</b></p><p><i>(Ký, ghi rõ họ tên)</i></p><br/><br/><p>${
-            t==='Thủ trưởng đơn vị' ? (cty?.thu_truong||'') :
-            t==='Thủ kho' ? (cty?.thu_kho||'') :
-            t==='Người lập biểu' ? (cty?.nguoi_lap_bieu||'') : ''}</p></div>`).join('')}
-      </div>`;
-    printHtml(content, 'Nhập Xuất Tồn');
+          `<div><p><b>${t}</b></p><p><i>(Ký, ghi rõ họ tên)</i></p><br/><br/>
+           <p>${t==='Thủ trưởng đơn vị'?(cty?.thu_truong||''):t==='Thủ kho'?(cty?.thu_kho||''):t==='Người lập biểu'?(cty?.nguoi_lap_bieu||''):''}</p>
+          </div>`).join('')}
+      </div>
+    `, 'Nhập Xuất Tồn');
   };
 
   // ── XUẤT EXCEL ──────────────────────────────

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getPhieu, getSoChungTu, getCongTy } from '../utils/api';
+import { printContent } from '../utils/printExcel';
 
 const fmt  = n => Number(n || 0).toLocaleString('vi-VN');
 const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '';
@@ -53,35 +54,7 @@ export default function InPhieu() {
 
   const handlePrint = () => {
     if (!printRef.current) return;
-    const content = printRef.current.innerHTML;
-    const w = window.open('', '_blank', 'width=900,height=700');
-    if (!w) { alert('Trình duyệt đã chặn popup! Vui lòng cho phép popup cho trang này.'); return; }
-    w.document.open();
-    w.document.write(`<!DOCTYPE html>
-<html lang="vi"><head>
-<meta charset="utf-8"/>
-<title>Phiếu ${soCT}</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Times New Roman', Times, serif; font-size: 13px; padding: 24px; color: #000; }
-  h2 { text-align: center; font-size: 18px; margin: 8px 0 4px; }
-  p  { margin: 3px 0; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  th, td { border: 1px solid #333; padding: 5px 8px; }
-  th { background: #eee; font-weight: bold; text-align: center; }
-  tfoot td { font-weight: bold; background: #f5f5f5; }
-  .num { text-align: right; }
-  .center { text-align: center; }
-  .sig-row { display: flex; justify-content: space-around; margin-top: 48px; text-align: center; }
-  .sig-row div { min-width: 120px; }
-  hr { border: none; border-top: 1px solid #ccc; margin: 10px 0; }
-  @page { margin: 15mm; }
-</style>
-</head><body>
-${content}
-</body></html>`);
-    w.document.close();
-    w.onload = () => { w.focus(); w.print(); };
+    printContent(printRef.current.innerHTML, `Phiếu ${soCT}`);
   };
 
   const isNhap = soCT.toUpperCase().includes('PN') || soCT.toUpperCase().startsWith('PNTP');

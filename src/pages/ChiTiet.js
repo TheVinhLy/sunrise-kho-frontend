@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getChiTiet, getDanhMuc, getCongTy } from '../utils/api';
-import { printHtml, exportExcel, fmt, fmtD } from '../utils/printExcel';
+import { printContent, exportExcel, fmt, fmtD } from '../utils/printExcel';
 
 export default function ChiTiet() {
   const [dm, setDm]         = useState([]);
@@ -28,7 +28,6 @@ export default function ChiTiet() {
   const tuNgay  = filter.tu_ngay  || cty?.tu_ngay  || '';
   const denNgay = filter.den_ngay || cty?.den_ngay || '';
 
-  // ── IN ──────────────────────────────────────
   const handlePrint = () => {
     if (!data) return;
     const rows_html = data.chi_tiet.map((r,i) => `
@@ -43,7 +42,7 @@ export default function ChiTiet() {
         <td class="num" style="font-weight:bold;${Number(r.ton_luy_ke)<0?'color:red':''}">${fmt(r.ton_luy_ke)}</td>
       </tr>`).join('');
 
-    const content = `
+    printContent(`
       <p><b>${cty?.ten_cong_ty}</b></p>
       <p>${cty?.dia_chi}</p>
       <h3>SỔ CHI TIẾT VẬT LIỆU, DỤNG CỤ, SẢN PHẨM, HÀNG HÓA</h3>
@@ -55,7 +54,8 @@ export default function ChiTiet() {
           <th>Diễn giải</th><th>Nhập</th><th>Xuất</th><th>Tồn lũy kế</th>
         </tr></thead>
         <tbody>
-          <tr><td></td><td colspan="4"><i>Tồn đầu kỳ</i></td><td></td><td></td><td class="num"><b>${fmt(data.ton_dau_ky)}</b></td></tr>
+          <tr><td></td><td colspan="4"><i>Tồn đầu kỳ</i></td><td></td><td></td>
+            <td class="num"><b>${fmt(data.ton_dau_ky)}</b></td></tr>
           ${rows_html}
         </tbody>
         <tfoot><tr>
@@ -65,12 +65,13 @@ export default function ChiTiet() {
           <td class="num"><b>${fmt(tonCuoi)}</b></td>
         </tr></tfoot>
       </table>
-      <div class="sig-row" style="margin-top:36px">
+      <div class="sig-row">
         ${['Người lập biểu','Thủ kho','Kế toán trưởng'].map(t =>
-          `<div><p><b>${t}</b></p><p><i>(Ký, ghi rõ họ tên)</i></p><br/><br/><p>${
-            t==='Người lập biểu'?(cty?.nguoi_lap_bieu||''):t==='Thủ kho'?(cty?.thu_kho||''):''}</p></div>`).join('')}
-      </div>`;
-    printHtml(content, `Chi tiết NXT - ${maVT}`);
+          `<div><p><b>${t}</b></p><p><i>(Ký, ghi rõ họ tên)</i></p><br/><br/>
+           <p>${t==='Người lập biểu'?(cty?.nguoi_lap_bieu||''):t==='Thủ kho'?(cty?.thu_kho||''):''}</p>
+          </div>`).join('')}
+      </div>
+    `, `Chi tiết NXT - ${maVT}`);
   };
 
   // ── XUẤT EXCEL ──────────────────────────────
