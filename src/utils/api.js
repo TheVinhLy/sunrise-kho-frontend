@@ -57,3 +57,9 @@ export const setUserPerms = (id, menus) => api(`/api/users/${id}/permissions`, {
 export const getDvt    = () => api('/api/dvt');
 export const addDvt    = (data) => api('/api/dvt', { method: 'POST', body: data });
 export const deleteDvt = (id) => api(`/api/dvt/${id}`, { method: 'DELETE' });
+
+// Backup DB
+export const backupDb = () => {
+  const BASE = process.env.REACT_APP_API_URL || '';
+  window.open(BASE + '/api/backup', '_blank');
+};

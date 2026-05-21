@@ -10,7 +10,7 @@ const ALL_MENUS = [
   { key: 'in-phieu',  label: '🖨️ In phiếu' },
 ];
 
-const BLANK_USER = { username: '', password: '', ho_ten: '', role: 'user', is_active: true };
+const BLANK_USER = { username: '', password: '', ho_ten: '', role: 'user', is_active: true, timeout_phut: 30 };
 
 export default function QuanLyUser() {
   const [users, setUsers]     = useState([]);
@@ -82,6 +82,7 @@ export default function QuanLyUser() {
                     <th>Tên đăng nhập</th>
                     <th>Họ tên</th>
                     <th>Vai trò</th>
+                    <th>Timeout (phút)</th>
                     <th>Trạng thái</th>
                     <th>Ngày tạo</th>
                     <th>Thao tác</th>
@@ -102,6 +103,7 @@ export default function QuanLyUser() {
                           {u.role === 'admin' ? '👑 Admin' : '👤 User'}
                         </span>
                       </td>
+                      <td className="text-center">{u.timeout_phut || 30} phút</td>
                       <td>
                         <span style={{
                           padding: '2px 8px', borderRadius: 12, fontSize: 11,
@@ -161,6 +163,13 @@ export default function QuanLyUser() {
                     <option value="user">👤 User</option>
                     <option value="admin">👑 Admin</option>
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Timeout tự đăng xuất (phút)</label>
+                  <input type="number" min="5" max="480" value={form.timeout_phut || 30}
+                    onChange={e => set('timeout_phut', Number(e.target.value))}
+                    placeholder="30" />
+                  <span style={{fontSize:11,color:'#888'}}>Tự đăng xuất sau số phút không hoạt động</span>
                 </div>
                 <div className="form-group">
                   <label>Trạng thái</label>

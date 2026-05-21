@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getChungTu, addChungTu, updateChungTu, deleteChungTu, getDanhMuc } from '../utils/api';
+import { exportExcel } from '../utils/printExcel';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const firstOfMonth = () => {
@@ -101,7 +102,17 @@ export default function NhapLieu() {
       <div className="card">
         <div className="card-header">
           <h2>✏️ Bảng nhập liệu chứng từ</h2>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn btn-ghost" onClick={() => {
+              const headers = ['STT','Ngày ghi sổ','Số CT','Ngày CT','Diễn giải','Nhập','Xuất','Mã VT','ĐVT','Tên vật tư','Nhà CC','Người N/G','Nội dung'];
+              const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '';
+              const exRows = rows.map((r,i) => [
+                i+1, fmtD(r.ngay_ghi_so), r.so_chung_tu, fmtD(r.ngay_chung_tu),
+                r.dien_giai||'', Number(r.so_luong_nhap)||0, Number(r.so_luong_xuat)||0,
+                r.ma_vat_tu, r.dvt||'', r.ten_vat_tu||'', r.ten_nha_cc||'', r.nguoi_nhan_giao||'', r.noi_dung||'',
+              ]);
+              exportExcel(headers, exRows, 'NhapLieu');
+            }}>📥 Xuất Excel</button>
             <button className="btn btn-primary" onClick={() => openAdd('nhap')}>+ Phiếu nhập</button>
             <button className="btn btn-warning" onClick={() => openAdd('xuat')}>+ Phiếu xuất</button>
           </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getDanhMuc, addDanhMuc, updateDanhMuc, deleteDanhMuc, getDvt, addDvt, deleteDvt } from '../utils/api';
+import { exportExcel } from '../utils/printExcel';
 
 const BLANK = { ma_vat_tu: '', ten_vat_tu: '', dvt: 'Cái', so_luong_dau_ky: 0, ten_nha_cc: '', dia_chi_ncc: '', ghi_chu: '' };
 
@@ -48,7 +49,14 @@ export default function DanhMuc() {
       <div className="card">
         <div className="card-header">
           <h2>📦 Danh mục vật tư hàng hóa</h2>
-          <button className="btn btn-primary" onClick={openAdd}>+ Thêm mới</button>
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn btn-ghost" onClick={() => {
+              const headers = ['STT','Mã vật tư','Tên vật tư','ĐVT','Tồn đầu kỳ','Nhà cung cấp','Địa chỉ NCC','Ghi chú'];
+              const exRows = filtered.map((r,i) => [i+1, r.ma_vat_tu, r.ten_vat_tu, r.dvt, Number(r.so_luong_dau_ky||0), r.ten_nha_cc||'', r.dia_chi_ncc||'', r.ghi_chu||'']);
+              exportExcel(headers, exRows, 'DanhMucVatTu');
+            }}>📥 Xuất Excel</button>
+            <button className="btn btn-primary" onClick={openAdd}>+ Thêm mới</button>
+          </div>
         </div>
         <div className="card-body">
           <div className="filter-bar">

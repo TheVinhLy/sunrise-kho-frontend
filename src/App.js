@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
 import './index.css';
 
@@ -11,17 +11,19 @@ import NhapXuatTon from './pages/NhapXuatTon';
 import ChiTiet    from './pages/ChiTiet';
 import InPhieu    from './pages/InPhieu';
 import QuanLyUser from './pages/QuanLyUser';
+import Backup     from './pages/Backup';
 import { getCongTy } from './utils/api';
 
 const ALL_NAV = [
-  { to: '/',            icon: '🏠', label: 'Menu chính',      key: null },
-  { to: '/cong-ty',    icon: '🏢', label: 'Thông tin DN',     key: 'cong-ty' },
-  { to: '/danh-muc',   icon: '📦', label: 'Danh mục VTHH',   key: 'danh-muc' },
-  { to: '/nhap-lieu',  icon: '✏️',  label: 'Nhập liệu',       key: 'nhap-lieu' },
-  { to: '/nxt',        icon: '📊', label: 'Nhập - Xuất - Tồn',key: 'nxt' },
-  { to: '/chi-tiet',   icon: '🔍', label: 'Chi tiết N-X-T',  key: 'chi-tiet' },
-  { to: '/in-phieu',   icon: '🖨️', label: 'In phiếu',         key: 'in-phieu' },
-  { to: '/quan-ly-user',icon:'👥', label: 'Quản lý User',     key: '__admin__' },
+  { to: '/',             icon: '🏠', label: 'Menu chính',       key: null },
+  { to: '/cong-ty',     icon: '🏢', label: 'Thông tin DN',      key: 'cong-ty' },
+  { to: '/danh-muc',    icon: '📦', label: 'Danh mục VTHH',    key: 'danh-muc' },
+  { to: '/nhap-lieu',   icon: '✏️',  label: 'Nhập liệu',        key: 'nhap-lieu' },
+  { to: '/nxt',         icon: '📊', label: 'Nhập - Xuất - Tồn', key: 'nxt' },
+  { to: '/chi-tiet',    icon: '🔍', label: 'Chi tiết N-X-T',   key: 'chi-tiet' },
+  { to: '/in-phieu',    icon: '🖨️', label: 'In phiếu',          key: 'in-phieu' },
+  { to: '/backup',      icon: '💾', label: 'Backup DB',          key: '__admin__' },
+  { to: '/quan-ly-user',icon: '👥', label: 'Quản lý User',      key: '__admin__' },
 ];
 
 function Sidebar({ cty, user, onLogout }) {
@@ -99,13 +101,38 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('sk_user')); } catch { return null; }
   });
   const [cty, setCty] = useState(null);
+  const timerRef = useRef(null);
+
+  // Auto-logout sau timeout_phut phút không hoạt động
+  const resetTimer = useCallback(() => {
+    if (!user) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    const minutes = user.timeout_phut || 30;
+    timerRef.current = setTimeout(() => {
+      localStorage.removeItem('sk_user');
+      setUser(null);
+      alert(`⏰ Phiên làm việc đã hết hạn sau ${minutes} phút không hoạt động. Vui lòng đăng nhập lại.`);
+    }, minutes * 60 * 1000);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const events = ['mousedown','mousemove','keydown','scroll','touchstart','click'];
+    events.forEach(e => window.addEventListener(e, resetTimer, { passive: true }));
+    resetTimer(); // bắt đầu timer ngay khi login
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [user, resetTimer]);
 
   useEffect(() => {
     if (user) getCongTy().then(setCty).catch(() => {});
   }, [user]);
 
-  const handleLogin = (u) => setUser(u);
+  const handleLogin = (u) => { setUser(u); };
   const handleLogout = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     localStorage.removeItem('sk_user');
     setUser(null);
   };
@@ -126,8 +153,9 @@ export default function App() {
               <Route path="/nhap-lieu"     element={<ProtectedRoute menuKey="nhap-lieu"  user={user}><NhapLieu /></ProtectedRoute>} />
               <Route path="/nxt"           element={<ProtectedRoute menuKey="nxt"        user={user}><NhapXuatTon /></ProtectedRoute>} />
               <Route path="/chi-tiet"      element={<ProtectedRoute menuKey="chi-tiet"   user={user}><ChiTiet /></ProtectedRoute>} />
-              <Route path="/in-phieu"      element={<ProtectedRoute menuKey="in-phieu"   user={user}><InPhieu /></ProtectedRoute>} />
-              <Route path="/quan-ly-user"  element={<ProtectedRoute menuKey="__admin__"  user={user}><QuanLyUser /></ProtectedRoute>} />
+              <Route path="/in-phieu"       element={<ProtectedRoute menuKey="in-phieu"   user={user}><InPhieu /></ProtectedRoute>} />
+              <Route path="/backup"         element={<ProtectedRoute menuKey="__admin__"  user={user}><Backup /></ProtectedRoute>} />
+              <Route path="/quan-ly-user"   element={<ProtectedRoute menuKey="__admin__"  user={user}><QuanLyUser /></ProtectedRoute>} />
               <Route path="*"              element={<Navigate to="/" />} />
             </Routes>
           </div>
