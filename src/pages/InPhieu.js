@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getPhieu, getSoChungTu, getCongTy } from '../utils/api';
-import { printContent } from '../utils/printExcel';
+import { printHtml } from '../utils/printExcel';
 
 const fmt  = n => Number(n || 0).toLocaleString('vi-VN');
 const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '';
@@ -54,7 +54,7 @@ export default function InPhieu() {
 
   const handlePrint = () => {
     if (!printRef.current) return;
-    printContent(printRef.current.innerHTML, `Phiếu ${soCT}`);
+    printHtml(printRef.current.innerHTML, `Phiếu ${soCT}`);
   };
 
   const isNhap = soCT.toUpperCase().includes('PN') || soCT.toUpperCase().startsWith('PNTP');

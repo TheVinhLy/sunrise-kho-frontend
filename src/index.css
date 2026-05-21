@@ -224,15 +224,10 @@ tbody tr:nth-child(even):hover { background: #f0f7f3; }
 
 /* ── Print ── */
 @media print {
-  .sidebar, .topbar, .no-print { display: none !important; }
-  .content { padding: 0; }
-  .card { border: none; box-shadow: none; }
+  /* Ẩn toàn bộ app, chỉ hiện __print_frame__ do printHtml tạo ra */
+  body > *:not(#__print_frame__) { display: none !important; }
+  #__print_frame__ { display: block !important; }
 }
-
-.print-area { font-family: 'Times New Roman', Times, serif; }
-.print-area table { border-collapse: collapse; }
-.print-area td, .print-area th { border: 1px solid #333; padding: 4px 8px; }
-
 /* ── Spinner ── */
 .spinner {
   border: 3px solid #eee;

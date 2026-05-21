@@ -1,115 +1,105 @@
-// ── IN — không dùng popup, dùng CSS media print trực tiếp ────────────
-// Cách này 100% hoạt động, không bị block popup
-export function printContent(htmlContent, title = 'In') {
-  // Tạo div ẩn để in
-  const printId = 'sk-print-area';
-  let area = document.getElementById(printId);
-  if (!area) {
-    area = document.createElement('div');
-    area.id = printId;
-    document.body.appendChild(area);
+// ── IN bằng CSS @media print — không dùng popup ──────────────────
+export function printHtml(content, title = 'In') {
+  const old = document.getElementById('__print_frame__');
+  if (old) old.remove();
+
+  const styleId = '__print_style__';
+  let styleEl = document.getElementById(styleId);
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    document.head.appendChild(styleEl);
   }
-
-  // Inject style print nếu chưa có
-  let style = document.getElementById('sk-print-style');
-  if (!style) {
-    style = document.createElement('style');
-    style.id = 'sk-print-style';
-    style.innerHTML = `
-      @media print {
-        body > *:not(#${printId}) { display: none !important; }
-        #${printId} {
-          display: block !important;
-          position: fixed; inset: 0; z-index: 99999;
-          background: white; padding: 15mm;
-          font-family: 'Times New Roman', Times, serif;
-          font-size: 13px; color: #000;
-        }
-        #${printId} h2, #${printId} h3 { text-align: center; margin: 6px 0; }
-        #${printId} p  { margin: 3px 0; }
-        #${printId} table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        #${printId} th, #${printId} td { border: 1px solid #333; padding: 5px 8px; }
-        #${printId} th { background: #eee !important; font-weight: bold; text-align: center; -webkit-print-color-adjust: exact; }
-        #${printId} tfoot td { font-weight: bold; background: #f5f5f5 !important; -webkit-print-color-adjust: exact; }
-        #${printId} .num    { text-align: right; }
-        #${printId} .center { text-align: center; }
-        #${printId} .sig-row { display: flex; justify-content: space-around; margin-top: 44px; text-align: center; }
-        #${printId} .sig-row div { min-width: 120px; }
-        #${printId} hr { border: none; border-top: 1px solid #ccc; margin: 8px 0; }
-        #${printId} .no-print { display: none !important; }
-        @page { margin: 15mm; }
+  styleEl.textContent = `
+    @media print {
+      body > *:not(#__print_frame__) { display: none !important; }
+      #__print_frame__ {
+        display: block !important;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: auto;
+        background: white;
+        z-index: 99999;
+        padding: 20px;
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 13px;
+        color: #000;
       }
-      @media screen {
-        #${printId} { display: none; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
+      #__print_frame__ h2,
+      #__print_frame__ h3 { text-align: center; margin: 6px 0; }
+      #__print_frame__ p   { margin: 3px 0; }
+      #__print_frame__ table { width:100%; border-collapse:collapse; margin-top:10px; }
+      #__print_frame__ th,
+      #__print_frame__ td  { border:1px solid #333; padding:5px 8px; }
+      #__print_frame__ th  { background:#eee !important; font-weight:bold; text-align:center;
+                              -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      #__print_frame__ tfoot td { font-weight:bold; background:#f5f5f5 !important;
+                                   -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      #__print_frame__ .num    { text-align:right; }
+      #__print_frame__ .center { text-align:center; }
+      #__print_frame__ .sig-row { display:flex; justify-content:space-around; margin-top:44px; text-align:center; }
+      #__print_frame__ .sig-row div { min-width:120px; }
+      #__print_frame__ hr { border:none; border-top:1px solid #ccc; margin:8px 0; }
+      @page { margin:15mm; }
+    }
+    @media screen {
+      #__print_frame__ { display: none; }
+    }
+  `;
 
-  // Đặt title trang in
-  const oldTitle = document.title;
-  document.title = title;
+  const frame = document.createElement('div');
+  frame.id = '__print_frame__';
+  frame.innerHTML = content;
+  document.body.appendChild(frame);
 
-  // Nội dung
-  area.innerHTML = htmlContent;
-
-  // In
-  window.print();
-
-  // Khôi phục
-  document.title = oldTitle;
-  area.innerHTML = '';
+  const prevTitle = document.title;
+  setTimeout(() => {
+    document.title = title;
+    window.print();
+    setTimeout(() => {
+      frame.remove();
+      document.title = prevTitle;
+    }, 1500);
+  }, 150);
 }
 
-// ── XUẤT XLSX — dùng SheetJS CDN ────────────────────────────────────
-export async function exportExcel(headers, rows, filename = 'export') {
-  // Load SheetJS nếu chưa có
-  if (!window.XLSX) {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-  const XLSX = window.XLSX;
+// ── XUẤT EXCEL ──────────────────────────────────────────────────────
+export function exportExcel(headers, rows, filename = 'export') {
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:x="urn:schemas-microsoft-com:office:excel"
+    xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"/>
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+<x:ExcelWorksheet><x:Name>Sheet1</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head><body><table border="1">`;
 
-  // Tạo worksheet
-  const wsData = [headers, ...rows];
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  html += '<tr>' + headers.map(h =>
+    `<th style="background:#1b3a2f;color:white;font-weight:bold;">${h}</th>`
+  ).join('') + '</tr>';
 
-  // Định dạng cột rộng tự động
-  const colWidths = headers.map((h, ci) => ({
-    wch: Math.max(
-      h.length + 2,
-      ...rows.map(r => String(r[ci] ?? '').length + 1)
-    )
-  }));
-  ws['!cols'] = colWidths;
+  rows.forEach((row, idx) => {
+    const bg = idx % 2 === 0 ? '#ffffff' : '#f5f5f5';
+    html += '<tr>' + row.map(cell => {
+      const isNum = typeof cell === 'number';
+      return `<td style="background:${bg};${isNum ? 'text-align:right;mso-number-format:\"#,##0\";' : ''}">${cell ?? ''}</td>`;
+    }).join('') + '</tr>';
+  });
 
-  // Style header row (bold + màu nền)
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let C = range.s.c; C <= range.e.c; C++) {
-    const cell = ws[XLSX.utils.encode_cell({ r: 0, c: C })];
-    if (cell) {
-      cell.s = {
-        font:    { bold: true, color: { rgb: 'FFFFFF' } },
-        fill:    { fgColor: { rgb: '1B3A2F' } },
-        alignment: { horizontal: 'center' },
-      };
-    }
-  }
+  html += '</table></body></html>';
 
-  // Tạo workbook
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-
-  // Xuất file .xlsx
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  XLSX.writeFile(wb, `${filename}_${dateStr}.xlsx`);
+  const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `${filename}_${new Date().toISOString().slice(0,10)}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ── FORMAT ──────────────────────────────────────────────────────────
 export const fmt  = n => Number(n || 0).toLocaleString('vi-VN');
-export const fmtD = d => d ? d.slice(0, 10).split('-').reverse().join('/') : '';
+export const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '';
