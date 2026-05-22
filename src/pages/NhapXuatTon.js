@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getNhapXuatTon, getCongTy } from '../utils/api';
-import { printContent, exportExcel, fmt, fmtD } from '../utils/printExcel';
+import { printHtml, exportExcel, fmt, fmtD } from '../utils/printExcel';
 
 export default function NhapXuatTon() {
   const [rows, setRows]     = useState([]);
@@ -44,18 +44,28 @@ export default function NhapXuatTon() {
         <td>${r.ten_vat_tu}</td>
         <td class="center">${r.dvt}</td>
         <td class="num">${fmt(r.ton_dau_ky)}</td>
-        <td class="num" style="color:#155724">${fmt(r.tong_nhap)}</td>
-        <td class="num" style="color:#721c24">${fmt(r.tong_xuat)}</td>
+        <td class="num">${fmt(r.tong_nhap)}</td>
+        <td class="num">${fmt(r.tong_xuat)}</td>
         <td class="num" style="font-weight:bold;${Number(r.ton_cuoi_ky)<0?'color:red':''}">${fmt(r.ton_cuoi_ky)}</td>
       </tr>`).join('');
 
-    printContent(`
+    printHtml(`
       <p><b>${cty?.ten_cong_ty}</b></p>
       <p>${cty?.dia_chi}</p>
       <p>Tên kho: ${cty?.ten_kho}</p>
-      <h2 style="margin-top:10px">SỔ THEO DÕI NHẬP - XUẤT - TỒN</h2>
+      <h2 style="margin-top:8px">SỔ THEO DÕI NHẬP - XUẤT - TỒN</h2>
       <p style="text-align:center">Từ ngày: ${fmtD(tuNgay)} &nbsp;đến ngày: ${fmtD(denNgay)}</p>
       <table>
+        <colgroup>
+          <col style="width:28px"/>
+          <col style="width:22mm"/>
+          <col style="width:auto"/>
+          <col style="width:14px"/>
+          <col style="width:20mm"/>
+          <col style="width:20mm"/>
+          <col style="width:20mm"/>
+          <col style="width:20mm"/>
+        </colgroup>
         <thead><tr>
           <th>STT</th><th>Mã vật tư</th><th>Tên vật tư</th><th>ĐVT</th>
           <th>Tồn đầu kỳ</th><th>Tổng nhập</th><th>Tổng xuất</th><th>Tồn cuối kỳ</th>

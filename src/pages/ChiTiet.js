@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getChiTiet, getDanhMuc, getCongTy } from '../utils/api';
-import { printContent, exportExcel, fmt, fmtD } from '../utils/printExcel';
+import { printHtml, exportExcel, fmt, fmtD } from '../utils/printExcel';
 
 export default function ChiTiet() {
   const [dm, setDm]         = useState([]);
@@ -37,20 +37,30 @@ export default function ChiTiet() {
         <td>${r.so_chung_tu}</td>
         <td>${fmtD(r.ngay_ghi_so)}</td>
         <td>${r.dien_giai||''}</td>
-        <td class="num" style="color:#155724">${Number(r.so_luong_nhap)>0?fmt(r.so_luong_nhap):''}</td>
-        <td class="num" style="color:#721c24">${Number(r.so_luong_xuat)>0?fmt(r.so_luong_xuat):''}</td>
+        <td class="num">${Number(r.so_luong_nhap)>0?fmt(r.so_luong_nhap):''}</td>
+        <td class="num">${Number(r.so_luong_xuat)>0?fmt(r.so_luong_xuat):''}</td>
         <td class="num" style="font-weight:bold;${Number(r.ton_luy_ke)<0?'color:red':''}">${fmt(r.ton_luy_ke)}</td>
       </tr>`).join('');
 
-    printContent(`
+    printHtml(`
       <p><b>${cty?.ten_cong_ty}</b></p>
       <p>${cty?.dia_chi}</p>
       <h3>SỔ CHI TIẾT VẬT LIỆU, DỤNG CỤ, SẢN PHẨM, HÀNG HÓA</h3>
       <p style="text-align:center">Từ ${fmtD(tuNgay)} đến ${fmtD(denNgay)}</p>
       <p><b>Tên vật tư:</b> ${data.danh_muc?.ten_vat_tu} &nbsp;&nbsp; <b>Mã:</b> ${data.danh_muc?.ma_vat_tu} &nbsp;&nbsp; <b>ĐVT:</b> ${data.danh_muc?.dvt}</p>
       <table>
+        <colgroup>
+          <col style="width:22px"/>
+          <col style="width:20mm"/>
+          <col style="width:22mm"/>
+          <col style="width:20mm"/>
+          <col style="width:auto"/>
+          <col style="width:18mm"/>
+          <col style="width:18mm"/>
+          <col style="width:20mm"/>
+        </colgroup>
         <thead><tr>
-          <th>STT</th><th>Ngày CT</th><th>Số CT</th><th>Ngày ghi sổ</th>
+          <th>STT</th><th>Ngày CT</th><th>Số CT</th><th>Ngày g/sổ</th>
           <th>Diễn giải</th><th>Nhập</th><th>Xuất</th><th>Tồn lũy kế</th>
         </tr></thead>
         <tbody>

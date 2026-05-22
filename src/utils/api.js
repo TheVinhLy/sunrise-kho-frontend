@@ -58,8 +58,14 @@ export const getDvt    = () => api('/api/dvt');
 export const addDvt    = (data) => api('/api/dvt', { method: 'POST', body: data });
 export const deleteDvt = (id) => api(`/api/dvt/${id}`, { method: 'DELETE' });
 
-// Backup DB
+// Backup DB — tải trực tiếp không qua popup
 export const backupDb = () => {
   const BASE = process.env.REACT_APP_API_URL || '';
-  window.open(BASE + '/api/backup', '_blank');
+  const now  = new Date().toISOString().slice(0,10);
+  const a    = document.createElement('a');
+  a.href     = BASE + '/api/backup';
+  a.download = `sunrise_kho_backup_${now}.sql`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 };

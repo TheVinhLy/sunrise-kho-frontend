@@ -1,66 +1,86 @@
-// ── IN bằng CSS @media print — không dùng popup ──────────────────
+// ── IN qua iframe ẩn — không popup, không treo ─────────────────────
 export function printHtml(content, title = 'In') {
-  const old = document.getElementById('__print_frame__');
-  if (old) old.remove();
+  const oldIframe = document.getElementById('__print_iframe__');
+  if (oldIframe) oldIframe.remove();
 
-  const styleId = '__print_style__';
-  let styleEl = document.getElementById(styleId);
-  if (!styleEl) {
-    styleEl = document.createElement('style');
-    styleEl.id = styleId;
-    document.head.appendChild(styleEl);
+  const iframe = document.createElement('iframe');
+  iframe.id = '__print_iframe__';
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;visibility:hidden;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html>
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<title>${title}</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'Times New Roman',Times,serif;
+    font-size:12px;
+    color:#000;
+    width:170mm;
+    margin:0 auto;
+    padding:10mm 0;
   }
-  styleEl.textContent = `
-    @media print {
-      body > *:not(#__print_frame__) { display: none !important; }
-      #__print_frame__ {
-        display: block !important;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: auto;
-        background: white;
-        z-index: 99999;
-        padding: 20px;
-        font-family: 'Times New Roman', Times, serif;
-        font-size: 13px;
-        color: #000;
-      }
-      #__print_frame__ h2,
-      #__print_frame__ h3 { text-align: center; margin: 6px 0; }
-      #__print_frame__ p   { margin: 3px 0; }
-      #__print_frame__ table { width:100%; border-collapse:collapse; margin-top:10px; }
-      #__print_frame__ th,
-      #__print_frame__ td  { border:1px solid #333; padding:5px 8px; }
-      #__print_frame__ th  { background:#eee !important; font-weight:bold; text-align:center;
-                              -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-      #__print_frame__ tfoot td { font-weight:bold; background:#f5f5f5 !important;
-                                   -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-      #__print_frame__ .num    { text-align:right; }
-      #__print_frame__ .center { text-align:center; }
-      #__print_frame__ .sig-row { display:flex; justify-content:space-around; margin-top:44px; text-align:center; }
-      #__print_frame__ .sig-row div { min-width:120px; }
-      #__print_frame__ hr { border:none; border-top:1px solid #ccc; margin:8px 0; }
-      @page { margin:15mm; }
-    }
-    @media screen {
-      #__print_frame__ { display: none; }
-    }
-  `;
+  h2,h3 { text-align:center; margin:5px 0; font-size:14px; }
+  p { margin:2px 0; font-size:12px; line-height:1.4; }
+  table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:8px;
+    font-size:11px;
+    table-layout:fixed;
+  }
+  th,td {
+    border:1px solid #333;
+    padding:3px 5px;
+    word-wrap:break-word;
+    overflow-wrap:break-word;
+  }
+  th {
+    background:#ddd;
+    font-weight:bold;
+    text-align:center;
+    font-size:11px;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  tfoot td {
+    font-weight:bold;
+    background:#eee;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  .num    { text-align:right; white-space:nowrap; }
+  .center { text-align:center; }
+  .sig-row {
+    display:flex;
+    justify-content:space-around;
+    margin-top:30px;
+    text-align:center;
+    font-size:12px;
+  }
+  .sig-row div { min-width:100px; }
+  hr { border:none; border-top:1px solid #999; margin:6px 0; }
+  @page {
+    size: A4 portrait;
+    margin: 15mm 20mm 15mm 20mm;
+  }
+</style>
+</head><body>${content}</body></html>`);
+  doc.close();
 
-  const frame = document.createElement('div');
-  frame.id = '__print_frame__';
-  frame.innerHTML = content;
-  document.body.appendChild(frame);
-
-  const prevTitle = document.title;
-  setTimeout(() => {
-    document.title = title;
-    window.print();
-    setTimeout(() => {
-      frame.remove();
-      document.title = prevTitle;
-    }, 1500);
-  }, 150);
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch(e) {
+      console.error('Print error:', e);
+    }
+    setTimeout(() => iframe.remove(), 3000);
+  };
 }
 
 // ── XUẤT EXCEL ──────────────────────────────────────────────────────
@@ -76,7 +96,7 @@ export function exportExcel(headers, rows, filename = 'export') {
 </head><body><table border="1">`;
 
   html += '<tr>' + headers.map(h =>
-    `<th style="background:#1b3a2f;color:white;font-weight:bold;">${h}</th>`
+    `<th style="background:#1b3a2f;color:white;font-weight:bold;white-space:nowrap;">${h}</th>`
   ).join('') + '</tr>';
 
   rows.forEach((row, idx) => {
