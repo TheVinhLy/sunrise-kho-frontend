@@ -110,8 +110,8 @@ export default function InPhieu() {
           <col style="width:auto"/>
           <col style="width:24mm"/>
           <col style="width:12mm"/>
-          <col style="width:18mm"/>
-          <col style="width:18mm"/>
+          <col style="width:20mm"/>
+          <col style="width:20mm"/>
           <col style="width:18mm"/>
           <col style="width:22mm"/>
         </colgroup>        
@@ -120,8 +120,8 @@ export default function InPhieu() {
             <th>Tên vật tư / hàng hoá</th>
             <th style="width:24mm">Mã số</th>
             <th style="width:12mm">ĐVT</th>
-            <th style="width:18mm">SL yêu cầu</th>
-            <th style="width:18mm">SL thực tế</th>
+            <th style="width:20mm">SL yêu cầu</th>
+            <th style="width:20mm">SL thực tế</th>
             <th style="width:18mm">Đơn giá</th>
             <th style="width:22mm">Thành tiền</th>
           </tr>
