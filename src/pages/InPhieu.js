@@ -106,7 +106,7 @@ export default function InPhieu() {
       ${first.ten_nha_cc ? `<p>- Nhà cung cấp: <strong>${first.ten_nha_cc}</strong></p>` : ''}
       <table>
         <colgroup>
-          <col style="width:22px"/>
+          <col style="width:40px"/>
           <col style="width:auto"/>
           <col style="width:24mm"/>
           <col style="width:12mm"/>
@@ -117,7 +117,7 @@ export default function InPhieu() {
         </colgroup>
         <thead>
           <tr>
-            <th style="width:22px">STT</th>
+            <th style="width:40px">STT</th>
             <th>Tên vật tư / hàng hoá</th>
             <th style="width:24mm">Mã số</th>
             <th style="width:12mm">ĐVT</th>
@@ -244,7 +244,7 @@ export default function InPhieu() {
                   <table>
                     <thead>
                       <tr>
-                        <th style={{width:30}}>STT</th>
+                        <th style={{width:40}}>STT</th>
                         <th>Tên vật tư / hàng hoá</th>
                         <th style={{width:110}}>Mã số</th>
                         <th style={{width:45}}>ĐVT</th>

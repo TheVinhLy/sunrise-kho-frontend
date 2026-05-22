@@ -57,7 +57,7 @@ export default function NhapXuatTon() {
       <p style="text-align:center">Từ ngày: ${fmtD(tuNgay)} &nbsp;đến ngày: ${fmtD(denNgay)}</p>
       <table>
         <colgroup>
-          <col style="width:28px"/>
+          <col style="width:40px"/>
           <col style="width:22mm"/>
           <col style="width:auto"/>
           <col style="width:14px"/>
@@ -67,7 +67,7 @@ export default function NhapXuatTon() {
           <col style="width:20mm"/>
         </colgroup>
         <thead><tr>
-          <th>STT</th><th>Mã vật tư</th><th>Tên vật tư</th><th>ĐVT</th>
+          <th style="width:40px">STT</th><th>Mã vật tư</th><th>Tên vật tư</th><th>ĐVT</th>
           <th>Tồn đầu kỳ</th><th>Tổng nhập</th><th>Tổng xuất</th><th>Tồn cuối kỳ</th>
         </tr></thead>
         <tbody>${rows_html}</tbody>

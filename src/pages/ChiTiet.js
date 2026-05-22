@@ -50,7 +50,7 @@ export default function ChiTiet() {
       <p><b>Tên vật tư:</b> ${data.danh_muc?.ten_vat_tu} &nbsp;&nbsp; <b>Mã:</b> ${data.danh_muc?.ma_vat_tu} &nbsp;&nbsp; <b>ĐVT:</b> ${data.danh_muc?.dvt}</p>
       <table>
         <colgroup>
-          <col style="width:22px"/>
+          <col style="width:40px"/>
           <col style="width:20mm"/>
           <col style="width:22mm"/>
           <col style="width:20mm"/>
@@ -60,7 +60,7 @@ export default function ChiTiet() {
           <col style="width:20mm"/>
         </colgroup>
         <thead><tr>
-          <th>STT</th><th>Ngày CT</th><th>Số CT</th><th>Ngày g/sổ</th>
+          <th style="width:40px">STT</th><th>Ngày CT</th><th>Số CT</th><th>Ngày g/sổ</th>
           <th>Diễn giải</th><th>Nhập</th><th>Xuất</th><th>Tồn lũy kế</th>
         </tr></thead>
         <tbody>
