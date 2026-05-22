@@ -60,13 +60,13 @@ export default function NhapXuatTon() {
           <col style="width:40px"/>
           <col style="width:22mm"/>
           <col style="width:auto"/>
-          <col style="width:14px"/>
+          <col style="width:auto"/>
           <col style="width:20mm"/>
           <col style="width:20mm"/>
           <col style="width:20mm"/>
           <col style="width:20mm"/>
         </colgroup>
-        <thead><tr>
+        <thead><tr style="color:black;font-weight:bold;">
           <th style="width:40px">STT</th><th>Mã vật tư</th><th>Tên vật tư</th><th>ĐVT</th>
           <th>Tồn đầu kỳ</th><th>Tổng nhập</th><th>Tổng xuất</th><th>Tồn cuối kỳ</th>
         </tr></thead>
