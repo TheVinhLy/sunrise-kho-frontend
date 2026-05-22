@@ -114,9 +114,8 @@ export default function InPhieu() {
           <col style="width:18mm"/>
           <col style="width:18mm"/>
           <col style="width:22mm"/>
-        </colgroup>
-        <thead>
-          <tr>
+        </colgroup>        
+        <thead><tr style="color:black;font-weight:bold;">          
             <th style="width:40px">STT</th>
             <th>Tên vật tư / hàng hoá</th>
             <th style="width:24mm">Mã số</th>

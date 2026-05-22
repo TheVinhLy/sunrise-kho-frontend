@@ -58,8 +58,8 @@ export default function ChiTiet() {
           <col style="width:18mm"/>
           <col style="width:18mm"/>
           <col style="width:20mm"/>
-        </colgroup>
-        <thead><tr>
+        </colgroup>        
+        <thead><tr style="color:black;font-weight:bold;">
           <th style="width:40px">STT</th><th>Ngày CT</th><th>Số CT</th><th>Ngày g/sổ</th>
           <th>Diễn giải</th><th>Nhập</th><th>Xuất</th><th>Tồn lũy kế</th>
         </tr></thead>

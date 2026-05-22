@@ -60,7 +60,7 @@ export default function NhapXuatTon() {
           <col style="width:40px"/>
           <col style="width:22mm"/>
           <col style="width:auto"/>
-          <col style="width:auto"/>
+          <col style="width:10mm"/>
           <col style="width:20mm"/>
           <col style="width:20mm"/>
           <col style="width:20mm"/>
