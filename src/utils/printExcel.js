@@ -1,86 +1,121 @@
-// ── IN qua iframe ẩn — không popup, không treo ─────────────────────
+// ── MỞ TRANG PREVIEW ĐỂ USER TỰ BẤM Ctrl+P ──────────────────────────
+// Không tự gọi window.print() — tránh treo khi máy có nhiều máy in mạng
 export function printHtml(content, title = 'In') {
-  const oldIframe = document.getElementById('__print_iframe__');
-  if (oldIframe) oldIframe.remove();
+  const old = document.getElementById('__print_frame__');
+  if (old) old.remove();
 
-  const iframe = document.createElement('iframe');
-  iframe.id = '__print_iframe__';
-  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;visibility:hidden;';
-  document.body.appendChild(iframe);
+  // Tạo div overlay che toàn màn hình — giống preview in
+  const overlay = document.createElement('div');
+  overlay.id = '__print_frame__';
+  overlay.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:99999',
+    'background:#525659',
+    'display:flex', 'flex-direction:column',
+    'align-items:center',
+  ].join(';');
 
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-  doc.open();
-  doc.write(`<!DOCTYPE html>
-<html lang="vi"><head>
-<meta charset="utf-8"/>
-<title>${title}</title>
-<style>
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body {
-    font-family:'Times New Roman',Times,serif;
-    font-size:12px;
-    color:#000;
-    width:170mm;
-    margin:0 auto;
-    padding:10mm 0;
-  }
-  h2,h3 { text-align:center; margin:5px 0; font-size:14px; }
-  p { margin:2px 0; font-size:12px; line-height:1.4; }
-  table {
-    width:100%;
-    border-collapse:collapse;
-    margin-top:8px;
-    font-size:11px;
-    table-layout:fixed;
-  }
-  th,td {
-    border:1px solid #333;
-    padding:3px 5px;
-    word-wrap:break-word;
-    overflow-wrap:break-word;
-  }
-  th {
-    background:#ddd;
-    font-weight:bold;
-    text-align:center;
-    font-size:11px;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-  }
-  tfoot td {
-    font-weight:bold;
-    background:#eee;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-  }
-  .num    { text-align:right; white-space:nowrap; }
-  .center { text-align:center; }
-  .sig-row {
-    display:flex;
-    justify-content:space-around;
-    margin-top:30px;
-    text-align:center;
-    font-size:12px;
-  }
-  .sig-row div { min-width:100px; }
-  hr { border:none; border-top:1px solid #999; margin:6px 0; }
-  @page {
-    size: A4 portrait;
-    margin: 15mm 20mm 15mm 20mm;
-  }
-</style>
-</head><body>${content}</body></html>`);
-  doc.close();
+  // Toolbar trên cùng
+  const toolbar = document.createElement('div');
+  toolbar.style.cssText = [
+    'width:100%', 'background:#404040',
+    'padding:10px 20px',
+    'display:flex', 'align-items:center', 'gap:16px',
+    'box-shadow:0 2px 8px rgba(0,0,0,.4)',
+    'flex-shrink:0',
+  ].join(';');
+  toolbar.innerHTML = `
+    <span style="color:#fff;font-size:14px;font-weight:bold;font-family:Arial">
+      🖨️ ${title}
+    </span>
+    <span style="color:#aaa;font-size:12px;font-family:Arial">
+      Chọn đúng máy in (không chọn "Save as PDF")
+    </span>
+    <button id="__print_btn__" style="
+      margin-left:auto;
+      background:#1a73e8;color:#fff;
+      border:none;border-radius:4px;
+      padding:8px 20px;font-size:13px;
+      cursor:pointer;font-family:Arial;font-weight:bold;
+    ">🖨️ In</button>
+    <button id="__close_btn__" style="
+      background:#666;color:#fff;
+      border:none;border-radius:4px;
+      padding:8px 14px;font-size:13px;
+      cursor:pointer;font-family:Arial;
+    ">✕ Đóng</button>
+  `;
 
-  iframe.onload = () => {
-    try {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-    } catch(e) {
-      console.error('Print error:', e);
-    }
-    setTimeout(() => iframe.remove(), 3000);
+  // Vùng paper A4
+  const paper = document.createElement('div');
+  paper.style.cssText = [
+    'background:#fff',
+    'width:210mm',
+    'min-height:297mm',
+    'margin:20px auto',
+    'padding:15mm 18mm',
+    'box-shadow:0 4px 24px rgba(0,0,0,.5)',
+    'font-family:Arial,sans-serif',
+    'font-size:11pt',
+    'color:#000',
+    'overflow:visible',
+  ].join(';');
+  paper.innerHTML = `
+    <style>
+      #__print_frame__ table { width:100%; border-collapse:collapse; margin-top:8px; font-size:9.5pt; table-layout:fixed; word-break:break-word; }
+      #__print_frame__ th, #__print_frame__ td { border:1px solid #444; padding:3px 5px; vertical-align:middle; }
+      #__print_frame__ th { background:#d8d8d8; font-weight:bold; text-align:center; }
+      #__print_frame__ tfoot td { font-weight:bold; background:#eee; }
+      #__print_frame__ .num { text-align:right; white-space:nowrap; }
+      #__print_frame__ .center { text-align:center; }
+      #__print_frame__ h2, #__print_frame__ h3 { text-align:center; margin:5px 0; font-size:13pt; }
+      #__print_frame__ p { margin:2px 0; line-height:1.4; }
+      #__print_frame__ hr { border:none; border-top:1px solid #999; margin:6px 0; }
+      #__print_frame__ .sig-row { display:flex; justify-content:space-around; margin-top:30px; text-align:center; }
+      #__print_frame__ .sig-row div { min-width:100px; }
+      @media print {
+        #__print_frame__ > div:first-child { display:none !important; }
+        #__print_frame__ { background:white !important; position:static !important; }
+        body > *:not(#__print_frame__) { display:none !important; }
+        @page { size:A4 portrait; margin:15mm 18mm; }
+      }
+    </style>
+    ${content}
+  `;
+
+  // Scroll wrapper
+  const scroll = document.createElement('div');
+  scroll.style.cssText = 'overflow-y:auto;flex:1;width:100%;display:flex;justify-content:center;padding-bottom:30px;';
+  scroll.appendChild(paper);
+
+  overlay.appendChild(toolbar);
+  overlay.appendChild(scroll);
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+
+  // Nút đóng
+  document.getElementById('__close_btn__').onclick = () => {
+    overlay.remove();
+    document.body.style.overflow = '';
   };
+
+  // Nút in — gọi print ngay khi click
+  document.getElementById('__print_btn__').onclick = () => {
+    window.print();
+  };
+
+  // Phím P cũng in
+  const onKey = (e) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKey);
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      e.preventDefault();
+      window.print();
+    }
+  };
+  document.addEventListener('keydown', onKey);
 }
 
 // ── XUẤT EXCEL ──────────────────────────────────────────────────────

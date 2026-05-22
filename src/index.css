@@ -224,9 +224,16 @@ tbody tr:nth-child(even):hover { background: #f0f7f3; }
 
 /* ── Print ── */
 @media print {
-  /* Ẩn toàn bộ app, chỉ hiện __print_frame__ do printHtml tạo ra */
+  /* Ẩn toàn bộ app khi in, chỉ hiện #__print_frame__ */
   body > *:not(#__print_frame__) { display: none !important; }
-  #__print_frame__ { display: block !important; }
+  #__print_frame__ { 
+    position: static !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+  /* Ẩn toolbar trong frame khi in */
+  #__print_frame__ > div:first-child { display: none !important; }
+  @page { size: A4 portrait; margin: 15mm 18mm; }
 }
 /* ── Spinner ── */
 .spinner {
