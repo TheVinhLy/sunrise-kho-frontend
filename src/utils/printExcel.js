@@ -76,7 +76,12 @@ export function printHtml(content, title = 'In') {
         #__print_frame__ > div:first-child { display:none !important; }
         #__print_frame__ { background:white !important; position:static !important; }
         body > *:not(#__print_frame__) { display:none !important; }
-        @page { size:A4 portrait; margin:15mm 18mm; }
+        @page {
+          size: A4 portrait;
+          margin: 10mm 15mm;
+          /* Một số trình duyệt hỗ trợ ẩn header/footer qua margin-top/bottom nhỏ */
+        }
+        @page :first { margin-top: 10mm; }
       }
     </style>
     ${content}
