@@ -47,6 +47,7 @@ export function printHtml(content, title = 'In') {
 
   // Vùng paper A4
   const paper = document.createElement('div');
+  paper.id = '__print_paper__';
   paper.style.cssText = [
     'background:#fff',
     'width:210mm',
@@ -73,15 +74,26 @@ export function printHtml(content, title = 'In') {
       #__print_frame__ .sig-row { display:flex; justify-content:space-around; margin-top:30px; text-align:center; }
       #__print_frame__ .sig-row div { min-width:100px; }
       @media print {
-        #__print_frame__ > div:first-child { display:none !important; }
-        #__print_frame__ { background:white !important; position:static !important; }
+        /* Ẩn toàn bộ overlay, toolbar, scroll wrapper */
+        #__print_frame__,
+        #__print_frame__ > *:not(#__print_paper__) { display:none !important; }
+        /* Chỉ hiện paper */
+        #__print_paper__ {
+          display:block !important;
+          position:fixed !important;
+          top:0 !important; left:0 !important;
+          width:100% !important;
+          margin:0 !important;
+          padding:12mm 15mm !important;
+          box-shadow:none !important;
+          border:none !important;
+          background:white !important;
+        }
         body > *:not(#__print_frame__) { display:none !important; }
         @page {
           size: A4 portrait;
-          margin: 10mm 15mm;
-          /* Một số trình duyệt hỗ trợ ẩn header/footer qua margin-top/bottom nhỏ */
+          margin: 0;
         }
-        @page :first { margin-top: 10mm; }
       }
     </style>
     ${content}
