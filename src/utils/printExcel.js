@@ -74,26 +74,31 @@ export function printHtml(content, title = 'In') {
       #__print_frame__ .sig-row { display:flex; justify-content:space-around; margin-top:30px; text-align:center; }
       #__print_frame__ .sig-row div { min-width:100px; }
       @media print {
-        /* Ẩn toàn bộ overlay, toolbar, scroll wrapper */
-        #__print_frame__,
-        #__print_frame__ > *:not(#__print_paper__) { display:none !important; }
-        /* Chỉ hiện paper */
-        #__print_paper__ {
+        body > *:not(#__print_frame__) { display:none !important; }
+        #__print_frame__ {
+          position:static !important;
+          background:white !important;
+          overflow:visible !important;
           display:block !important;
-          position:fixed !important;
-          top:0 !important; left:0 !important;
-          width:100% !important;
+        }
+        /* Ẩn toolbar và scroll wrapper, chỉ hiện paper */
+        #__print_frame__ > div:nth-child(1),
+        #__print_frame__ > div:nth-child(2) > div:not(#__print_paper__) {
+          display:none !important;
+        }
+        #__print_frame__ > div:nth-child(2) {
+          overflow:visible !important;
+          display:block !important;
+          height:auto !important;
+          padding:0 !important;
+        }
+        #__print_paper__ {
+          box-shadow:none !important;
           margin:0 !important;
           padding:12mm 15mm !important;
-          box-shadow:none !important;
-          border:none !important;
-          background:white !important;
+          width:100% !important;
         }
-        body > *:not(#__print_frame__) { display:none !important; }
-        @page {
-          size: A4 portrait;
-          margin: 0;
-        }
+        @page { size:A4 portrait; margin:10mm 15mm; }
       }
     </style>
     ${content}
@@ -101,7 +106,7 @@ export function printHtml(content, title = 'In') {
 
   // Scroll wrapper
   const scroll = document.createElement('div');
-  scroll.style.cssText = 'overflow-y:auto;flex:1;width:100%;display:flex;justify-content:center;padding-bottom:30px;';
+  scroll.style.cssText = 'overflow-y:auto;flex:1;width:100%;display:flex;justify-content:center;padding-bottom:30px;background:#525659;';
   scroll.appendChild(paper);
 
   overlay.appendChild(toolbar);
