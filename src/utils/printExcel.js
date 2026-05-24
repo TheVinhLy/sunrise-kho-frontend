@@ -140,82 +140,65 @@ export function printHtml(content, title = 'In') {
   document.addEventListener('keydown', onKey);
 }
 
-// ── XUẤT EXCEL (.xlsx) dùng SheetJS ────────────────────────────────
+// ── XUẤT EXCEL (.xlsx) dùng HTML table trick — giữ định dạng ──────
 export function exportExcel(headers, rows, filename = 'export') {
-  import('xlsx').then(XLSX => {
-    // Tạo workbook
-    const wb = XLSX.utils.book_new();
+  let html = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8"/>
+  <!--[if gte mso 9]><xml>
+    <x:ExcelWorkbook><x:ExcelWorksheets>
+      <x:ExcelWorksheet><x:Name>Sheet1</x:Name>
+        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+      </x:ExcelWorksheet>
+    </x:ExcelWorksheets></x:ExcelWorkbook>
+  </xml><![endif]-->
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 11pt; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #AAAAAA; padding: 4px 8px; vertical-align: middle; }
+    .hdr { background: #1B3A2F; color: #FFFFFF; font-weight: bold; text-align: center; white-space: nowrap; }
+    .num { text-align: right; }
+    .even { background: #FFFFFF; }
+    .odd  { background: #F5F5F5; }
+  </style>
+</head>
+<body><table>`;
 
-    // Gộp header + data
-    const wsData = [headers, ...rows.map(row =>
-      row.map(cell => cell ?? '')
-    )];
+  // Header row
+  html += '<tr>' + headers.map(h =>
+    `<th class="hdr">${h}</th>`
+  ).join('') + '</tr>';
 
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Định dạng header row (row 0)
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for (let c = range.s.c; c <= range.e.c; c++) {
-      const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
-      if (cell) {
-        cell.s = {
-          font:    { bold: true, color: { rgb: 'FFFFFF' } },
-          fill:    { fgColor: { rgb: '1B3A2F' } },
-          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-          border: {
-            top:    { style: 'thin', color: { rgb: '000000' } },
-            bottom: { style: 'thin', color: { rgb: '000000' } },
-            left:   { style: 'thin', color: { rgb: '000000' } },
-            right:  { style: 'thin', color: { rgb: '000000' } },
-          },
-        };
+  // Data rows
+  rows.forEach((row, idx) => {
+    const cls = idx % 2 === 0 ? 'even' : 'odd';
+    html += '<tr>' + row.map(cell => {
+      const isNum = typeof cell === 'number';
+      const val   = cell ?? '';
+      // Ép Excel nhận số đúng
+      if (isNum) {
+        return `<td class="${cls} num" x:num>${val}</td>`;
       }
-    }
-
-    // Định dạng data rows
-    rows.forEach((row, ri) => {
-      const bg = ri % 2 === 0 ? 'FFFFFF' : 'F5F5F5';
-      row.forEach((cell, ci) => {
-        const ref = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
-        if (!ws[ref]) return;
-        const isNum = typeof cell === 'number';
-        ws[ref].s = {
-          fill: { fgColor: { rgb: bg } },
-          alignment: { horizontal: isNum ? 'right' : 'left', vertical: 'center' },
-          numFmt: isNum ? '#,##0' : undefined,
-          border: {
-            top:    { style: 'thin', color: { rgb: 'CCCCCC' } },
-            bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-            left:   { style: 'thin', color: { rgb: 'CCCCCC' } },
-            right:  { style: 'thin', color: { rgb: 'CCCCCC' } },
-          },
-        };
-        // Ép kiểu số để Excel nhận dạng đúng
-        if (isNum) ws[ref].t = 'n';
-      });
-    });
-
-    // Tự động độ rộng cột
-    const colWidths = headers.map((h, ci) => {
-      const maxLen = Math.max(
-        String(h).length,
-        ...rows.map(r => String(r[ci] ?? '').length)
-      );
-      return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
-    });
-    ws['!cols'] = colWidths;
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-
-    // Xuất file .xlsx
-    const date = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `${filename}_${date}.xlsx`);
-  }).catch(e => {
-    console.error('xlsx load error:', e);
-    alert('Không tải được thư viện xlsx. Vui lòng thử lại!');
+      return `<td class="${cls}">${val}</td>`;
+    }).join('') + '</tr>';
   });
+
+  html += '</table></body></html>';
+
+  const blob = new Blob(['\uFEFF' + html], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8'
+  });
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = `${filename}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
-// ── FORMAT ──────────────────────────────────────────────────────────
-export const fmt  = n => Number(n || 0).toLocaleString('vi-VN');
-export const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '';
+// ── FORMAT
