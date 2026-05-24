@@ -12,7 +12,7 @@ function soTienBangChu(n) {
   while (n > 0) {
     const nhom = n % 1000;
     if (nhom !== 0) {
-      const h = Math.floor(nhom / 100);
+      const h  = Math.floor(nhom / 100);
       const ch = Math.floor((nhom % 100) / 10);
       const dv = nhom % 10;
       let s = '';
@@ -28,12 +28,12 @@ function soTienBangChu(n) {
 }
 
 export default function InPhieu() {
-  const [dsSoCT, setDsSoCT] = useState([]);
-  const [cty, setCty]       = useState(null);
-  const [soCT, setSoCT]     = useState('');
-  const [data, setData]     = useState(null);
+  const [dsSoCT, setDsSoCT]   = useState([]);
+  const [cty, setCty]         = useState(null);
+  const [soCT, setSoCT]       = useState('');
+  const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch]   = useState('');
 
   useEffect(() => {
     getSoChungTu().then(setDsSoCT);
@@ -48,30 +48,32 @@ export default function InPhieu() {
       .catch(() => setLoading(false));
   }, [soCT]);
 
-  // ── IN — build HTML string, không dùng DOM ref ──────────────────
   const handlePrint = () => {
     if (!data) return;
-    const rows   = data.rows || [];
-    const first  = rows[0] || {};
-    const isNhap = data.loai === 'nhap';
-    const loai   = isNhap ? 'PHIẾU NHẬP KHO' : 'PHIẾU XUẤT KHO';
-    const mauSo  = isNhap ? 'Mẫu số: 01-VT' : 'Mẫu số: 02-VT';
-    const tongSL = rows.reduce((s,r) => s + Number(isNhap ? r.so_luong_nhap : r.so_luong_xuat || 0), 0);
+    const rows    = data.rows || [];
+    const first   = rows[0] || {};
+    const isNhap  = data.loai === 'nhap';
+    const loai    = isNhap ? 'PHIẾU NHẬP KHO' : 'PHIẾU XUẤT KHO';
+    const mauSo   = isNhap ? 'Mẫu số: 01-VT' : 'Mẫu số: 02-VT';
+    const tongSL  = rows.reduce((s,r) => s + Number(isNhap ? r.so_luong_nhap : r.so_luong_xuat || 0), 0);
+    const tongTT  = rows.reduce((s,r) => s + Number(r.thanh_tien || 0), 0);
 
     const chiTietRows = rows.map((r, i) => {
       const sl = Number(isNhap ? r.so_luong_nhap : r.so_luong_xuat || 0);
+      const dg = Number(r.don_gia    || 0);
+      const tt = Number(r.thanh_tien || 0);
       return `<tr>
         <td class="center">${i+1}</td>
         <td>${r.ten_vat_tu || ''}</td>
-        <td>${r.ma_vat_tu || ''}</td>
+        <td>${r.ma_vat_tu  || ''}</td>
         <td class="center">${r.dvt || ''}</td>
         <td class="num">${fmt(sl)}</td>
         <td class="num">${fmt(sl)}</td>
-        <td></td><td></td>
+        <td class="num">${dg ? fmt(dg) : ''}</td>
+        <td class="num">${tt ? fmt(tt) : ''}</td>
       </tr>`;
     }).join('');
 
-    // Padding rows tối thiểu 5 dòng
     const padRows = Array.from({ length: Math.max(0, 5 - rows.length) })
       .map(() => '<tr style="height:26px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>')
       .join('');
@@ -110,38 +112,41 @@ export default function InPhieu() {
           <col style="width:auto"/>
           <col style="width:24mm"/>
           <col style="width:12mm"/>
-          <col style="width:20mm"/>
-          <col style="width:20mm"/>
           <col style="width:18mm"/>
-          <col style="width:22mm"/>
-        </colgroup>        
-        <thead><tr style="color:black;font-weight:bold;">          
-            <th style="width:40px">STT</th>
-            <th>Tên vật tư / hàng hoá</th>
-            <th style="width:24mm">Mã số</th>
-            <th style="width:12mm">ĐVT</th>
-            <th style="width:20mm">SL yêu cầu</th>
-            <th style="width:20mm">SL thực tế</th>
-            <th style="width:18mm">Đơn giá</th>
-            <th style="width:22mm">Thành tiền</th>
-          </tr>
-        </thead>
+          <col style="width:18mm"/>
+          <col style="width:20mm"/>
+          <col style="width:24mm"/>
+        </colgroup>
+        <thead><tr style="color:black;font-weight:bold;">
+          <th style="width:40px">STT</th>
+          <th>Tên vật tư / hàng hoá</th>
+          <th>Mã số</th>
+          <th>ĐVT</th>
+          <th>SL yêu cầu</th>
+          <th>SL thực tế</th>
+          <th>Đơn giá</th>
+          <th>Thành tiền</th>
+        </tr></thead>
         <tbody>
           ${chiTietRows}
           ${padRows}
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="4" class="center">CỘNG</td>
+            <td colspan="4" class="center"><b>CỘNG</b></td>
             <td class="num"><strong>${fmt(tongSL)}</strong></td>
             <td class="num"><strong>${fmt(tongSL)}</strong></td>
-            <td></td><td></td>
+            <td></td>
+            <td class="num"><strong>${tongTT ? fmt(tongTT) : ''}</strong></td>
           </tr>
         </tfoot>
       </table>
       <p style="margin-top:10px;font-style:italic;">
         - Tổng số lượng (viết bằng chữ): ${soTienBangChu(tongSL)} ${first.dvt || 'cái'}
       </p>
+      ${tongTT ? `<p style="font-style:italic;">
+        - Tổng thành tiền (viết bằng chữ): ${soTienBangChu(tongTT)} đồng
+      </p>` : ''}
       <div class="sig-row">
         ${sigNames.map(t => `
           <div>
@@ -165,11 +170,12 @@ export default function InPhieu() {
     (d.loai_ct||'').toLowerCase().includes(search.toLowerCase())
   );
 
-  const rows   = data?.rows || [];
-  const first  = rows[0] || {};
-  const isNhap = data?.loai === 'nhap';
+  const rows      = data?.rows || [];
+  const first     = rows[0] || {};
+  const isNhap    = data?.loai === 'nhap';
   const loaiPhieu = data?.loai === 'nhap' ? 'PHIẾU NHẬP KHO' : 'PHIẾU XUẤT KHO';
-  const tongSL = rows.reduce((s,r) => s + Number(isNhap ? r.so_luong_nhap : r.so_luong_xuat || 0), 0);
+  const tongSL    = rows.reduce((s,r) => s + Number(isNhap ? r.so_luong_nhap : r.so_luong_xuat || 0), 0);
+  const tongTT    = rows.reduce((s,r) => s + Number(r.thanh_tien || 0), 0);
 
   return (
     <div style={{display:'flex',gap:16,alignItems:'flex-start'}}>
@@ -177,8 +183,11 @@ export default function InPhieu() {
       <div className="card" style={{width:260,flexShrink:0,position:'sticky',top:0}}>
         <div className="card-header"><h2 style={{fontSize:13}}>📋 Chọn chứng từ</h2></div>
         <div className="card-body" style={{padding:'10px 12px'}}>
-          <input placeholder="Tìm số CT..." value={search} onChange={e=>setSearch(e.target.value)}
-            style={{width:'100%',marginBottom:8,padding:'6px 8px',border:'1px solid #ccc',borderRadius:4,fontFamily:'inherit',fontSize:13}}/>
+          <input
+            placeholder="Tìm số CT..." value={search}
+            onChange={e=>setSearch(e.target.value)}
+            style={{width:'100%',marginBottom:8,padding:'6px 8px',border:'1px solid #ccc',borderRadius:4,fontFamily:'inherit',fontSize:13}}
+          />
           <div style={{maxHeight:'calc(100vh - 220px)',overflowY:'auto'}}>
             {filteredDS.map(d => (
               <div key={d.so_chung_tu} onClick={()=>setSoCT(d.so_chung_tu)}
@@ -196,7 +205,9 @@ export default function InPhieu() {
                 </span>
               </div>
             ))}
-            {!filteredDS.length && <p style={{color:'#aaa',textAlign:'center',padding:16,fontSize:12}}>Không có chứng từ</p>}
+            {!filteredDS.length && (
+              <p style={{color:'#aaa',textAlign:'center',padding:16,fontSize:12}}>Không có chứng từ</p>
+            )}
           </div>
         </div>
       </div>
@@ -218,8 +229,8 @@ export default function InPhieu() {
               <button className="btn btn-print" onClick={handlePrint}>🖨️ In phiếu</button>
             </div>
             <div className="card-body">
-              {/* Preview phiếu */}
               <div style={{fontFamily:"'Times New Roman',serif",fontSize:13}}>
+                {/* Header */}
                 <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
                   <div>
                     <p style={{fontWeight:700}}>{cty?.ten_cong_ty}</p>
@@ -230,6 +241,7 @@ export default function InPhieu() {
                     <p>{data.loai==='nhap'?'Mẫu số: 01-VT':'Mẫu số: 02-VT'}</p>
                   </div>
                 </div>
+
                 <h2 style={{textAlign:'center',fontSize:17,margin:'8px 0 4px'}}>{loaiPhieu}</h2>
                 <p style={{textAlign:'center',fontSize:13,marginBottom:10}}>
                   Ngày {fmtD(first.ngay_chung_tu)} &nbsp;|&nbsp; Số: <b>{soCT}</b>
@@ -239,6 +251,7 @@ export default function InPhieu() {
                 <p>- Nội dung: <b>{first.noi_dung||first.dien_giai||''}</b></p>
                 {first.ten_nha_cc && <p>- Nhà cung cấp: <b>{first.ten_nha_cc}</b></p>}
 
+                {/* Bảng chi tiết */}
                 <div className="table-wrap" style={{marginTop:12}}>
                   <table>
                     <thead>
@@ -249,13 +262,15 @@ export default function InPhieu() {
                         <th style={{width:45}}>ĐVT</th>
                         <th style={{width:80}}>SL yêu cầu</th>
                         <th style={{width:80}}>SL thực tế</th>
-                        <th style={{width:80}}>Đơn giá</th>
-                        <th style={{width:90}}>Thành tiền</th>
+                        <th style={{width:90}}>Đơn giá</th>
+                        <th style={{width:100}}>Thành tiền</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r,i) => {
                         const sl = Number(isNhap ? r.so_luong_nhap : r.so_luong_xuat || 0);
+                        const dg = Number(r.don_gia    || 0);
+                        const tt = Number(r.thanh_tien || 0);
                         return (
                           <tr key={r.id}>
                             <td className="text-center">{i+1}</td>
@@ -264,7 +279,8 @@ export default function InPhieu() {
                             <td className="text-center">{r.dvt}</td>
                             <td className="num">{fmt(sl)}</td>
                             <td className="num">{fmt(sl)}</td>
-                            <td></td><td></td>
+                            <td className="num" style={{color:'#555'}}>{dg ? fmt(dg) : ''}</td>
+                            <td className="num" style={{fontWeight:600}}>{tt ? fmt(tt) : ''}</td>
                           </tr>
                         );
                       })}
@@ -274,14 +290,23 @@ export default function InPhieu() {
                         <td colSpan={4} className="text-center"><b>CỘNG</b></td>
                         <td className="num"><b>{fmt(tongSL)}</b></td>
                         <td className="num"><b>{fmt(tongSL)}</b></td>
-                        <td></td><td></td>
+                        <td></td>
+                        <td className="num" style={{fontWeight:700,color:'#1b3a2f'}}>
+                          {tongTT ? fmt(tongTT) : ''}
+                        </td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
+
                 <p style={{marginTop:10,fontStyle:'italic',fontSize:13}}>
                   - Tổng số lượng (viết bằng chữ): {soTienBangChu(tongSL)} {first.dvt||'cái'}
                 </p>
+                {tongTT > 0 && (
+                  <p style={{fontStyle:'italic',fontSize:13}}>
+                    - Tổng thành tiền (viết bằng chữ): {soTienBangChu(tongTT)} đồng
+                  </p>
+                )}
               </div>
             </div>
           </div>
