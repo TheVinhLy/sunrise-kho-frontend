@@ -13,6 +13,7 @@ import InPhieu       from './pages/InPhieu';
 import QuanLyUser    from './pages/QuanLyUser';
 import QuanLyCongTy  from './pages/QuanLyCongTy';
 import Backup        from './pages/Backup';
+import DoiMatKhau    from './pages/DoiMatKhau';
 import { getCongTy } from './utils/api';
 
 const ALL_NAV = [
@@ -26,6 +27,7 @@ const ALL_NAV = [
   { to:'/backup',       icon:'💾', label:'Backup DB',          key:'__admin__' },
   { to:'/ql-cong-ty',   icon:'🏭', label:'Quản lý công ty',   key:'__admin__' },
   { to:'/quan-ly-user', icon:'👥', label:'Quản lý User',      key:'__admin__' },
+  { to:'/doi-mat-khau',  icon:'🔑', label:'Đổi mật khẩu',     key:'__self__' },
 ];
 
 function Sidebar({ cty, user, onLogout, onSwitchCompany }) {
@@ -35,13 +37,14 @@ function Sidebar({ cty, user, onLogout, onSwitchCompany }) {
   const navItems = ALL_NAV.filter(n => {
     if (!n.key) return true;
     if (n.key === '__admin__') return isAdmin;
+    if (n.key === '__self__') return true; // Mọi user đều thấy
     return isAdmin || menus.includes(n.key);
   });
 
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <h1>🏭 SUNRISE KHO</h1>
+        <h1>🏭 QUẢN LÝ KHO</h1>
         <p style={{fontSize:11, color:'#7ec8a0', lineHeight:1.4}}>
           {cty?.ten_kho || '...'} · {cty?.nam || 2026}
         </p>
@@ -234,6 +237,7 @@ export default function App() {
               <Route path="/backup"       element={<ProtectedRoute menuKey="__admin__" user={user}><Backup/></ProtectedRoute>}/>
               <Route path="/ql-cong-ty"   element={<ProtectedRoute menuKey="__admin__" user={user}><QuanLyCongTy/></ProtectedRoute>}/>
               <Route path="/quan-ly-user" element={<ProtectedRoute menuKey="__admin__" user={user}><QuanLyUser/></ProtectedRoute>}/>
+              <Route path="/doi-mat-khau"  element={<DoiMatKhau user={user}/>}/>
               <Route path="*"             element={<Navigate to="/"/>}/>
             </Routes>
           </div>

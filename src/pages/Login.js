@@ -59,7 +59,7 @@ export default function Login({ onLogin }) {
         {/* Logo */}
         <div style={{textAlign:'center', marginBottom:24}}>
           <div style={{fontSize:44, marginBottom:6}}>🏭</div>
-          <h1 style={{fontSize:20, fontWeight:700, color:'#1b3a2f', marginBottom:4}}>SUNRISE KHO</h1>
+          <h1 style={{fontSize:20, fontWeight:700, color:'#1b3a2f', marginBottom:4}}>QUẢN LÝ KHO</h1>
           <p style={{fontSize:12, color:'#888'}}>Hệ thống quản lý kho</p>
         </div>
 
