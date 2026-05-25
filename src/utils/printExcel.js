@@ -140,49 +140,34 @@ export function printHtml(content, title = 'In') {
   document.addEventListener('keydown', onKey);
 }
 
-// ── XUẤT EXCEL (.xlsx) dùng HTML table trick — giữ định dạng ──────
+// ── XUẤT EXCEL (.xlsx) dùng inline style trực tiếp ──────────────────
 export function exportExcel(headers, rows, filename = 'export') {
-  let html = `
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-      xmlns:x="urn:schemas-microsoft-com:office:excel"
-      xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-  <meta charset="utf-8"/>
-  <!--[if gte mso 9]><xml>
-    <x:ExcelWorkbook><x:ExcelWorksheets>
-      <x:ExcelWorksheet><x:Name>Sheet1</x:Name>
-        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-      </x:ExcelWorksheet>
-    </x:ExcelWorksheets></x:ExcelWorkbook>
-  </xml><![endif]-->
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 11pt; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #AAAAAA; padding: 4px 8px; vertical-align: middle; }
-    .hdr { background: #1B3A2F; color: #FFFFFF; font-weight: bold; text-align: center; white-space: nowrap; }
-    .num { text-align: right; }
-    .even { background: #FFFFFF; }
-    .odd  { background: #F5F5F5; }
-  </style>
-</head>
-<body><table>`;
+  const HDR_STYLE = 'background:#1B3A2F;color:#FFFFFF;font-weight:bold;text-align:center;white-space:nowrap;border:1px solid #000;padding:4px 8px;font-family:Arial;font-size:11pt;';
+  const EVEN_STYLE = 'background:#FFFFFF;border:1px solid #AAAAAA;padding:4px 8px;font-family:Arial;font-size:10pt;';
+  const ODD_STYLE  = 'background:#F5F5F5;border:1px solid #AAAAAA;padding:4px 8px;font-family:Arial;font-size:10pt;';
+  const NUM_STYLE_EVEN = EVEN_STYLE + 'text-align:right;';
+  const NUM_STYLE_ODD  = ODD_STYLE  + 'text-align:right;';
 
-  // Header row
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"/>
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head><body><table>`;
+
+  // Header
   html += '<tr>' + headers.map(h =>
-    `<th class="hdr">${h}</th>`
+    `<td style="${HDR_STYLE}">${h}</td>`
   ).join('') + '</tr>';
 
   // Data rows
   rows.forEach((row, idx) => {
-    const cls = idx % 2 === 0 ? 'even' : 'odd';
+    const isOdd = idx % 2 !== 0;
     html += '<tr>' + row.map(cell => {
       const isNum = typeof cell === 'number';
       const val   = cell ?? '';
-      // Ép Excel nhận số đúng
-      if (isNum) {
-        return `<td class="${cls} num" x:num>${val}</td>`;
-      }
-      return `<td class="${cls}">${val}</td>`;
+      const style = isNum
+        ? (isOdd ? NUM_STYLE_ODD : NUM_STYLE_EVEN)
+        : (isOdd ? ODD_STYLE     : EVEN_STYLE);
+      return `<td style="${style}"${isNum ? ` x:num="${val}"` : ''}>${val}</td>`;
     }).join('') + '</tr>';
   });
 
@@ -200,5 +185,6 @@ export function exportExcel(headers, rows, filename = 'export') {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
 // ── FORMAT
