@@ -142,146 +142,38 @@ export function printHtml(content, title = 'In') {
 
 // ── XUẤT EXCEL ──────────────────────────────────────────────────────
 export function exportExcel(headers, rows, filename = 'export') {
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:x="urn:schemas-microsoft-com:office:excel"
+    xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"/>
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+<x:ExcelWorksheet><x:Name>Sheet1</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head><body><table border="1">`;
 
-  const HEADER_STYLE =
-    'background:#1B3A2F;' +
-    'color:#FFFFFF;' +
-    'font-weight:bold;' +
-    'text-align:center;' +
-    'border:1px solid #000;' +
-    'padding:4px 8px;' +
-    'white-space:nowrap;';
+  html += '<tr>' + headers.map(h =>
+    `<th style="background:#1b3a2f;color:white;font-weight:bold;white-space:nowrap;">${h}</th>`
+  ).join('') + '</tr>';
 
-  const EVEN_STYLE =
-    'background:#FFFFFF;' +
-    'border:1px solid #BDBDBD;' +
-    'padding:4px 8px;';
-
-  const ODD_STYLE =
-    'background:#F5F5F5;' +
-    'border:1px solid #BDBDBD;' +
-    'padding:4px 8px;';
-
-  let html = `
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-      xmlns:x="urn:schemas-microsoft-com:office:excel"
-      xmlns="http://www.w3.org/TR/REC-html40">
-
-<head>
-<meta charset="utf-8"/>
-
-<!--[if gte mso 9]>
-<xml>
-<x:ExcelWorkbook>
-<x:ExcelWorksheets>
-<x:ExcelWorksheet>
-<x:Name>Sheet1</x:Name>
-<x:WorksheetOptions>
-<x:DisplayGridlines/>
-</x:WorksheetOptions>
-</x:ExcelWorksheet>
-</x:ExcelWorksheets>
-</x:ExcelWorkbook>
-</xml>
-<![endif]-->
-
-<style>
-table{
-  border-collapse:collapse;
-  font-family:Arial,sans-serif;
-  font-size:10pt;
-}
-td,th{
-  vertical-align:middle;
-}
-</style>
-
-</head>
-
-<body>
-<table>
-`;
-
-  // Header
-  html += '<tr>';
-
-  headers.forEach(h => {
-    html += `
-      <th style="${HEADER_STYLE}">
-        ${h ?? ''}
-      </th>
-    `;
+  rows.forEach((row, idx) => {
+    const bg = idx % 2 === 0 ? '#ffffff' : '#f5f5f5';
+    html += '<tr>' + row.map(cell => {
+      const isNum = typeof cell === 'number';
+      return `<td style="background:${bg};${isNum ? 'text-align:right;mso-number-format:\"#,##0\";' : ''}">${cell ?? ''}</td>`;
+    }).join('') + '</tr>';
   });
 
-  html += '</tr>';
+  html += '</table></body></html>';
 
-  // Data
-  rows.forEach((row, rowIndex) => {
-
-    const rowStyle =
-      rowIndex % 2 === 0
-        ? EVEN_STYLE
-        : ODD_STYLE;
-
-    html += '<tr>';
-
-    row.forEach(cell => {
-
-      const value = cell ?? '';
-
-      const isNumber =
-        typeof value === 'number';
-
-      html += `
-        <td
-          style="
-            ${rowStyle}
-            ${isNumber ? 'text-align:right;' : ''}
-          "
-          ${
-            isNumber
-              ? `x:num="${value}"`
-              : ''
-          }
-        >
-          ${value}
-        </td>
-      `;
-    });
-
-    html += '</tr>';
-  });
-
-  html += `
-</table>
-</body>
-</html>
-`;
-
-  const blob = new Blob(
-    ['\uFEFF' + html],
-    {
-      type: 'application/vnd.ms-excel;charset=utf-8'
-    }
-  );
-
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-
+  const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
   a.href = url;
-
-  a.download =
-    `${filename}_${new Date()
-      .toISOString()
-      .slice(0, 10)}.xls`;
-
+  a.download = `${filename}_${new Date().toISOString().slice(0,10)}.xls`;
   document.body.appendChild(a);
-
   a.click();
-
   document.body.removeChild(a);
-
   URL.revokeObjectURL(url);
 }
 
