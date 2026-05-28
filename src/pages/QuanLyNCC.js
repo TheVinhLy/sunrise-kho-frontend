@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getNhaCc, addNhaCc, updateNhaCc, deleteNhaCc } from '../utils/api';
+import { exportExcel } from '../utils/printExcel';
 
 const BLANK = { ten_nha_cc: '', dia_chi: '', so_dien_thoai: '', email: '', ghi_chu: '' };
 
@@ -49,7 +50,14 @@ export default function QuanLyNCC() {
       <div className="card">
         <div className="card-header">
           <h2>🏭 Quản lý nhà cung cấp</h2>
-          <button className="btn btn-primary" onClick={openAdd}>+ Thêm NCC</button>
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn btn-ghost" onClick={() => {
+              const headers = ['STT','Tên nhà cung cấp','Địa chỉ','Số điện thoại','Email','Ghi chú'];
+              const exRows = filtered.map((r,i) => [i+1, r.ten_nha_cc, r.dia_chi||'', r.so_dien_thoai||'', r.email||'', r.ghi_chu||'']);
+              exportExcel(headers, exRows, 'DanhSachNCC');
+            }}>📥 Xuất Excel</button>
+            <button className="btn btn-primary" onClick={openAdd}>+ Thêm NCC</button>
+          </div>
         </div>
         <div className="card-body">
           <div className="filter-bar">

@@ -8,6 +8,7 @@ const MODULES = [
   { to: '/nxt',       icon: '📊', label: 'Nhập Xuất Tồn\nTổng hợp', color: '#f3e5f5', border: '#6a1b9a', desc: 'Báo cáo tồn kho theo từng mã vật tư' },
   { to: '/chi-tiet',  icon: '🔍', label: 'Chi tiết\nN-X-T',         color: '#fce4ec', border: '#880e4f', desc: 'Xem chi tiết nhập xuất tồn từng mặt hàng' },
   { to: '/in-phieu',  icon: '🖨️', label: 'In phiếu\nN-X-T',         color: '#e0f2f1', border: '#004d40', desc: 'In phiếu nhập kho / xuất kho theo chứng từ' },
+  { to: '/ql-nha-cc', icon: '🏭', label: 'Quản lý\nNhà cung cấp',  color: '#fff3e0', border: '#e65100', desc: 'Thêm, sửa, xóa danh sách nhà cung cấp' },
 ];
 
 export default function Menu({ cty }) {

@@ -354,30 +354,23 @@ export default function NhapLieu() {
                 </div>
                 <div className="form-group" style={{gridColumn:'1/-1'}}>
                   <label>Nhà cung cấp</label>
-                  <div style={{display:'flex',gap:6,marginBottom:4}}>
-                    <select
-                      value={form.nha_cc_id||''}
-                      onChange={e=>{
-                        const ncc = nccList.find(n=>n.id===+e.target.value);
-                        setForm(f=>({
-                          ...f,
-                          nha_cc_id:  e.target.value ? +e.target.value : '',
-                          ten_nha_cc: ncc ? ncc.ten_nha_cc : f.ten_nha_cc,
-                        }));
-                      }}
-                      style={{flex:1}}
-                    >
-                      <option value="">-- Chọn NCC hoặc nhập tay --</option>
-                      {nccList.map(n=>(
-                        <option key={n.id} value={n.id}>{n.ten_nha_cc}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <input
-                    value={form.ten_nha_cc||''}
-                    onChange={e=>set('ten_nha_cc',e.target.value)}
-                    placeholder="Tên NCC (tự điền hoặc nhập tay)"
-                  />
+                  <select
+                    value={form.nha_cc_id||''}
+                    onChange={e=>{
+                      const ncc = nccList.find(n=>n.id===+e.target.value);
+                      setForm(f=>({
+                        ...f,
+                        nha_cc_id:  e.target.value ? +e.target.value : '',
+                        ten_nha_cc: ncc ? ncc.ten_nha_cc : '',
+                      }));
+                    }}
+                    style={{width:'100%'}}
+                  >
+                    <option value="">-- Chọn nhà cung cấp --</option>
+                    {nccList.map(n=>(
+                      <option key={n.id} value={n.id}>{n.ten_nha_cc}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Người nhận/giao</label>

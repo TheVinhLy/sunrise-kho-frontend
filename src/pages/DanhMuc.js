@@ -144,38 +144,28 @@ export default function DanhMuc() {
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label>Nhà cung cấp</label>
-                  <div style={{display:'flex', gap:6}}>
-                    <select
-                      value={form.nha_cc_id || ''}
-                      onChange={e => {
-                        const ncc = nccList.find(n => n.id === +e.target.value);
-                        setForm(f => ({
-                          ...f,
-                          nha_cc_id:   e.target.value ? +e.target.value : '',
-                          ten_nha_cc:  ncc ? ncc.ten_nha_cc : f.ten_nha_cc,
-                          dia_chi_ncc: ncc ? (ncc.dia_chi||'') : f.dia_chi_ncc,
-                        }));
-                      }}
-                      style={{flex:1}}
-                    >
-                      <option value="">-- Chọn hoặc nhập tay bên dưới --</option>
-                      {nccList.map(n => (
-                        <option key={n.id} value={n.id}>{n.ten_nha_cc}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    value={form.nha_cc_id || ''}
+                    onChange={e => {
+                      const ncc = nccList.find(n => n.id === +e.target.value);
+                      setForm(f => ({
+                        ...f,
+                        nha_cc_id:   e.target.value ? +e.target.value : '',
+                        ten_nha_cc:  ncc ? ncc.ten_nha_cc : '',
+                        dia_chi_ncc: ncc ? (ncc.dia_chi||'') : '',
+                      }));
+                    }}
+                    style={{width:'100%'}}
+                  >
+                    <option value="">-- Chọn nhà cung cấp --</option>
+                    {nccList.map(n => (
+                      <option key={n.id} value={n.id}>{n.ten_nha_cc}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                  <label>Tên NCC (có thể sửa tay)</label>
-                  <input
-                    value={form.ten_nha_cc || ''}
-                    onChange={e => set('ten_nha_cc', e.target.value)}
-                    placeholder="Tự nhập nếu không có trong danh sách"
-                  />
-                </div>
-                <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                  <label>Địa chỉ NCC (tự fetch hoặc sửa tay)</label>
-                  <input value={form.dia_chi_ncc || ''} onChange={e => set('dia_chi_ncc', e.target.value)} />
+                  <label>Địa chỉ NCC</label>
+                  <input value={form.dia_chi_ncc || ''} readOnly style={{background:'#f5f5f5',color:'#888'}} />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label>Ghi chú</label>
