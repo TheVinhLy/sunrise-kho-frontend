@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { getDanhMuc, addDanhMuc, updateDanhMuc, deleteDanhMuc, getDvt, addDvt, deleteDvt } from '../utils/api';
+import { getDanhMuc, addDanhMuc, updateDanhMuc, deleteDanhMuc, getDvt, addDvt, deleteDvt, getNhaCc } from '../utils/api';
 import { exportExcel } from '../utils/printExcel';
 
-const BLANK = { ma_vat_tu: '', ten_vat_tu: '', dvt: 'Cái', so_luong_dau_ky: 0, ten_nha_cc: '', dia_chi_ncc: '', ghi_chu: '' };
+const BLANK = { ma_vat_tu: '', ten_vat_tu: '', dvt: 'Cái', so_luong_dau_ky: 0, nha_cc_id: '', ten_nha_cc: '', dia_chi_ncc: '', ghi_chu: '' };
 
 export default function DanhMuc() {
   const [rows, setRows] = useState([]);
   const [dvtList, setDvtList] = useState([]);
+  const [nccList, setNccList] = useState([]);
   const [newDvt, setNewDvt]   = useState('');
   const [showDvt, setShowDvt] = useState(false);
   const [modal, setModal] = useState(null); // null | {mode:'add'|'edit', data}
@@ -17,7 +18,8 @@ export default function DanhMuc() {
 
   const load = () => { setLoading(true); getDanhMuc().then(r => { setRows(r); setLoading(false); }).catch(e => { setErr(e.message); setLoading(false); }); };
   const loadDvt = () => getDvt().then(setDvtList).catch(() => {});
-  useEffect(() => { load(); loadDvt(); }, []);
+  const loadNcc = () => getNhaCc().then(setNccList).catch(() => {});
+  useEffect(() => { load(); loadDvt(); loadNcc(); }, []);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -142,10 +144,37 @@ export default function DanhMuc() {
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label>Nhà cung cấp</label>
-                  <input value={form.ten_nha_cc || ''} onChange={e => set('ten_nha_cc', e.target.value)} />
+                  <div style={{display:'flex', gap:6}}>
+                    <select
+                      value={form.nha_cc_id || ''}
+                      onChange={e => {
+                        const ncc = nccList.find(n => n.id === +e.target.value);
+                        setForm(f => ({
+                          ...f,
+                          nha_cc_id:   e.target.value ? +e.target.value : '',
+                          ten_nha_cc:  ncc ? ncc.ten_nha_cc : f.ten_nha_cc,
+                          dia_chi_ncc: ncc ? (ncc.dia_chi||'') : f.dia_chi_ncc,
+                        }));
+                      }}
+                      style={{flex:1}}
+                    >
+                      <option value="">-- Chọn hoặc nhập tay bên dưới --</option>
+                      {nccList.map(n => (
+                        <option key={n.id} value={n.id}>{n.ten_nha_cc}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                  <label>Địa chỉ NCC</label>
+                  <label>Tên NCC (có thể sửa tay)</label>
+                  <input
+                    value={form.ten_nha_cc || ''}
+                    onChange={e => set('ten_nha_cc', e.target.value)}
+                    placeholder="Tự nhập nếu không có trong danh sách"
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label>Địa chỉ NCC (tự fetch hoặc sửa tay)</label>
                   <input value={form.dia_chi_ncc || ''} onChange={e => set('dia_chi_ncc', e.target.value)} />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>

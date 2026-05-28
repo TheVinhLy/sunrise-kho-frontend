@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getChungTu, addChungTu, updateChungTu, deleteChungTu, getDanhMuc } from '../utils/api';
+import { getChungTu, addChungTu, updateChungTu, deleteChungTu, getDanhMuc, getNhaCc } from '../utils/api';
 import { exportExcel } from '../utils/printExcel';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -11,7 +11,7 @@ const BLANK = {
   ngay_ghi_so: today(), so_chung_tu: '', ngay_chung_tu: today(),
   dien_giai: '', so_luong_nhap: '', so_luong_xuat: '',
   don_gia: '', thanh_tien: 0,
-  ma_vat_tu: '', ten_nha_cc: '', nguoi_nhan_giao: '', noi_dung: '', dia_chi: ''
+  ma_vat_tu: '', nha_cc_id: '', ten_nha_cc: '', nguoi_nhan_giao: '', noi_dung: '', dia_chi: ''
 };
 
 const fmt  = n => n ? Number(n).toLocaleString('vi-VN') : '';
@@ -20,6 +20,7 @@ const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '';
 export default function NhapLieu() {
   const [rows, setRows]     = useState([]);
   const [dm, setDm]         = useState([]);
+  const [nccList, setNccList] = useState([]);
   const [modal, setModal]   = useState(null);
   const [form, setForm]     = useState(BLANK);
   const [filter, setFilter] = useState({ tu_ngay: firstOfMonth(), den_ngay: today(), ma_vat_tu: '', loai: '' });
@@ -41,7 +42,7 @@ export default function NhapLieu() {
   }, [filter]);
 
   useEffect(load, [load]);
-  useEffect(() => { getDanhMuc().then(setDm); }, []);
+  useEffect(() => { getDanhMuc().then(setDm); getNhaCc().then(setNccList); }, []);
 
   const setF = (k, v) => setFilter(f => ({ ...f, [k]: v }));
 
@@ -284,7 +285,12 @@ export default function NhapLieu() {
                   <label>Mã vật tư *</label>
                   <select value={form.ma_vat_tu} onChange={e=>{
                     const found = dm.find(d=>d.ma_vat_tu===e.target.value);
-                    setForm(f=>({...f, ma_vat_tu:e.target.value, ten_nha_cc: found?.ten_nha_cc||f.ten_nha_cc}));
+                    setForm(f=>({
+                      ...f,
+                      ma_vat_tu:  e.target.value,
+                      nha_cc_id:  found?.nha_cc_id || '',
+                      ten_nha_cc: found?.ten_nha_cc || f.ten_nha_cc,
+                    }));
                   }}>
                     <option value="">-- Chọn mã vật tư --</option>
                     {dm.map(d=><option key={d.ma_vat_tu} value={d.ma_vat_tu}>{d.ma_vat_tu} - {d.ten_vat_tu}</option>)}
@@ -346,9 +352,32 @@ export default function NhapLieu() {
                   <label>Diễn giải</label>
                   <input value={form.dien_giai||''} onChange={e=>set('dien_giai',e.target.value)}/>
                 </div>
-                <div className="form-group">
+                <div className="form-group" style={{gridColumn:'1/-1'}}>
                   <label>Nhà cung cấp</label>
-                  <input value={form.ten_nha_cc||''} onChange={e=>set('ten_nha_cc',e.target.value)}/>
+                  <div style={{display:'flex',gap:6,marginBottom:4}}>
+                    <select
+                      value={form.nha_cc_id||''}
+                      onChange={e=>{
+                        const ncc = nccList.find(n=>n.id===+e.target.value);
+                        setForm(f=>({
+                          ...f,
+                          nha_cc_id:  e.target.value ? +e.target.value : '',
+                          ten_nha_cc: ncc ? ncc.ten_nha_cc : f.ten_nha_cc,
+                        }));
+                      }}
+                      style={{flex:1}}
+                    >
+                      <option value="">-- Chọn NCC hoặc nhập tay --</option>
+                      {nccList.map(n=>(
+                        <option key={n.id} value={n.id}>{n.ten_nha_cc}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <input
+                    value={form.ten_nha_cc||''}
+                    onChange={e=>set('ten_nha_cc',e.target.value)}
+                    placeholder="Tên NCC (tự điền hoặc nhập tay)"
+                  />
                 </div>
                 <div className="form-group">
                   <label>Người nhận/giao</label>

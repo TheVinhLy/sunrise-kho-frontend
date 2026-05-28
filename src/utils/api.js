@@ -89,3 +89,9 @@ export const backupDb = () => {
     URL.revokeObjectURL(url);
   });
 };
+
+// NCC
+export const getNhaCc    = ()          => api('/api/nha-cc');
+export const addNhaCc    = (data)      => api('/api/nha-cc', { method: 'POST', body: data });
+export const updateNhaCc = (id, data)  => api(`/api/nha-cc/${id}`, { method: 'PUT', body: data });
+export const deleteNhaCc = (id)        => api(`/api/nha-cc/${id}`, { method: 'DELETE' });
