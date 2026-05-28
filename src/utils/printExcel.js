@@ -187,4 +187,6 @@ export function exportExcel(headers, rows, filename = 'export') {
 }
 
 
-// ── FORMAT
+// ── FORMAT ──────────────────────────────────────────────────────────
+export const fmt  = n => Number(n || 0).toLocaleString('vi-VN');
+export const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '';
