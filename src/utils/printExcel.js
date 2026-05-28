@@ -140,41 +140,69 @@ export function printHtml(content, title = 'In') {
   document.addEventListener('keydown', onKey);
 }
 
-// ── XUẤT EXCEL ──────────────────────────────────────────────────────
+// ── XUẤT EXCEL (.xlsx thật — load thư viện qua CDN, không cần npm) ──
 export function exportExcel(headers, rows, filename = 'export') {
-  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
-    xmlns:x="urn:schemas-microsoft-com:office:excel"
-    xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="utf-8"/>
-<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
-<x:ExcelWorksheet><x:Name>Sheet1</x:Name>
-<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
-</head><body><table border="1">`;
+  function doExport(XLSXStyle) {
+    const headerStyle = {
+      fill: { fgColor: { rgb: '1B3A2F' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: {
+        top: { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left: { style: 'thin', color: { rgb: '000000' } },
+        right: { style: 'thin', color: { rgb: '000000' } },
+      },
+    };
 
-  html += '<tr>' + headers.map(h =>
-    `<th style="background:#1b3a2f;color:white;font-weight:bold;white-space:nowrap;">${h}</th>`
-  ).join('') + '</tr>';
+    const wsData = [
+      headers.map(h => ({ v: h, t: 's', s: headerStyle })),
+      ...rows.map((row, idx) => {
+        const bg = idx % 2 === 0 ? 'FFFFFF' : 'F0F4F0';
+        return row.map(cell => {
+          const isNum = typeof cell === 'number';
+          return {
+            v: cell ?? '',
+            t: isNum ? 'n' : 's',
+            s: {
+              fill: { fgColor: { rgb: bg } },
+              font: { sz: 10 },
+              alignment: { horizontal: isNum ? 'right' : 'left', vertical: 'center' },
+              numFmt: isNum ? '#,##0' : undefined,
+              border: {
+                top: { style: 'thin', color: { rgb: 'CCCCCC' } },
+                bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
+                left: { style: 'thin', color: { rgb: 'CCCCCC' } },
+                right: { style: 'thin', color: { rgb: 'CCCCCC' } },
+              },
+            },
+          };
+        });
+      }),
+    ];
 
-  rows.forEach((row, idx) => {
-    const bg = idx % 2 === 0 ? '#ffffff' : '#f5f5f5';
-    html += '<tr>' + row.map(cell => {
-      const isNum = typeof cell === 'number';
-      return `<td style="background:${bg};${isNum ? 'text-align:right;mso-number-format:\"#,##0\";' : ''}">${cell ?? ''}</td>`;
-    }).join('') + '</tr>';
-  });
+    const ws = XLSXStyle.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = headers.map((h, ci) => ({
+      wch: Math.min(Math.max(h.length, ...rows.map(r => String(r[ci] ?? '').length)) + 2, 40),
+    }));
+    ws['!rows'] = [{ hpt: 22 }]; // header row cao hơn
 
-  html += '</table></body></html>';
+    const wb = XLSXStyle.utils.book_new();
+    XLSXStyle.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSXStyle.writeFile(wb, `${filename}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
 
-  const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = `${filename}_${new Date().toISOString().slice(0,10)}.xls`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Nếu đã load rồi thì dùng luôn
+  if (window.XLSXStyle) { doExport(window.XLSXStyle); return; }
+
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+  script.onload = () => {
+    window.XLSXStyle = window.XLSXStyle || window.XLSX; // xlsx-js-style bundle export tên XLSX
+    doExport(window.XLSXStyle);
+  };
+  script.onerror = () => alert('Không tải được thư viện Excel. Vui lòng kiểm tra kết nối mạng rồi thử lại.');
+  document.head.appendChild(script);
 }
 
 // ── FORMAT ──────────────────────────────────────────────────────────
