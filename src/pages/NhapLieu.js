@@ -353,24 +353,13 @@ export default function NhapLieu() {
                   <input value={form.dien_giai||''} onChange={e=>set('dien_giai',e.target.value)}/>
                 </div>
                 <div className="form-group" style={{gridColumn:'1/-1'}}>
-                  <label>Nhà cung cấp</label>
-                  <select
-                    value={form.nha_cc_id||''}
-                    onChange={e=>{
-                      const ncc = nccList.find(n=>n.id===+e.target.value);
-                      setForm(f=>({
-                        ...f,
-                        nha_cc_id:  e.target.value ? +e.target.value : '',
-                        ten_nha_cc: ncc ? ncc.ten_nha_cc : '',
-                      }));
-                    }}
-                    style={{width:'100%'}}
-                  >
-                    <option value="">-- Chọn nhà cung cấp --</option>
-                    {nccList.map(n=>(
-                      <option key={n.id} value={n.id}>{n.ten_nha_cc}</option>
-                    ))}
-                  </select>
+                  <label>Nhà cung cấp (tự ăn theo mã vật tư)</label>
+                  <input
+                    value={form.ten_nha_cc||''}
+                    readOnly
+                    placeholder="— Chọn mã vật tư để tự điền —"
+                    style={{background:'#f5f5f5',color: form.ten_nha_cc ? '#1b3a2f' : '#aaa', fontStyle: form.ten_nha_cc ? 'normal' : 'italic'}}
+                  />
                 </div>
                 <div className="form-group">
                   <label>Người nhận/giao</label>
