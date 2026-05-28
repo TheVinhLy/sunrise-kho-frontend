@@ -140,52 +140,42 @@ export function printHtml(content, title = 'In') {
   document.addEventListener('keydown', onKey);
 }
 
-// ── XUẤT EXCEL (.xlsx) dùng inline style trực tiếp ──────────────────
+// ── XUẤT EXCEL ──────────────────────────────────────────────────────
 export function exportExcel(headers, rows, filename = 'export') {
-  const HDR_STYLE = 'background:#1B3A2F;color:#FFFFFF;font-weight:bold;text-align:center;white-space:nowrap;border:1px solid #000;padding:4px 8px;font-family:Arial;font-size:11pt;';
-  const EVEN_STYLE = 'background:#FFFFFF;border:1px solid #AAAAAA;padding:4px 8px;font-family:Arial;font-size:10pt;';
-  const ODD_STYLE  = 'background:#F5F5F5;border:1px solid #AAAAAA;padding:4px 8px;font-family:Arial;font-size:10pt;';
-  const NUM_STYLE_EVEN = EVEN_STYLE + 'text-align:right;';
-  const NUM_STYLE_ODD  = ODD_STYLE  + 'text-align:right;';
-
-  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:x="urn:schemas-microsoft-com:office:excel"
+    xmlns="http://www.w3.org/TR/REC-html40">
 <head><meta charset="utf-8"/>
-<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
-</head><body><table>`;
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+<x:ExcelWorksheet><x:Name>Sheet1</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head><body><table border="1">`;
 
-  // Header
   html += '<tr>' + headers.map(h =>
-    `<td style="${HDR_STYLE}">${h}</td>`
+    `<th style="background:#1b3a2f;color:white;font-weight:bold;white-space:nowrap;">${h}</th>`
   ).join('') + '</tr>';
 
-  // Data rows
   rows.forEach((row, idx) => {
-    const isOdd = idx % 2 !== 0;
+    const bg = idx % 2 === 0 ? '#ffffff' : '#f5f5f5';
     html += '<tr>' + row.map(cell => {
       const isNum = typeof cell === 'number';
-      const val   = cell ?? '';
-      const style = isNum
-        ? (isOdd ? NUM_STYLE_ODD : NUM_STYLE_EVEN)
-        : (isOdd ? ODD_STYLE     : EVEN_STYLE);
-      return `<td style="${style}"${isNum ? ` x:num="${val}"` : ''}>${val}</td>`;
+      return `<td style="background:${bg};${isNum ? 'text-align:right;mso-number-format:\"#,##0\";' : ''}">${cell ?? ''}</td>`;
     }).join('') + '</tr>';
   });
 
   html += '</table></body></html>';
 
-  const blob = new Blob(['\uFEFF' + html], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8'
-  });
-  const url = URL.createObjectURL(blob);
-  const a   = document.createElement('a');
-  a.href     = url;
+  const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
   a.download = `${filename}_${new Date().toISOString().slice(0,10)}.xlsx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
 
 // ── FORMAT ──────────────────────────────────────────────────────────
 export const fmt  = n => Number(n || 0).toLocaleString('vi-VN');
