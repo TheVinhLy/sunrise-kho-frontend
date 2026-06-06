@@ -311,6 +311,11 @@ export default function NhanVien() {
                   <label>CCCD</label>
                   <input value={form.cccd || ''} onChange={e => set('cccd', e.target.value)} placeholder="0792..." />
                 </div>
+                <div className="nv-salary-row" style={{ gridColumn: '1 / -1' }}>
+                  {renderSalarySelect('Lương ngày công', 'luong_ngay', salaryOptions.ngayCong, true)}
+                  {renderSalarySelect('Lương OT/H', 'luong_ot_gio', salaryOptions.ot)}
+                  {renderSalarySelect('Cơm', 'tien_com_ngay', salaryOptions.com)}
+                </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Địa chỉ</label>
                   <input value={form.dia_chi || ''} onChange={e => set('dia_chi', e.target.value)} />
@@ -349,7 +354,6 @@ export default function NhanVien() {
                   <label>Lương cơ bản</label>
                   <input type="number" min="0" step="0.01" value={form.luong_co_ban ?? ''} onChange={e => set('luong_co_ban', e.target.value)} />
                 </div>
-                {renderSalarySelect('Lương ngày công', 'luong_ngay', salaryOptions.ngayCong, true)}
                 <div className="form-group">
                   <label>Hệ số OT</label>
                   <input type="number" min="0" step="0.01" value={form.he_so_ot ?? 1} onChange={e => set('he_so_ot', e.target.value)} />
@@ -358,8 +362,6 @@ export default function NhanVien() {
                   <label>Phụ cấp</label>
                   <input type="number" min="0" step="0.01" value={form.phu_cap ?? ''} onChange={e => set('phu_cap', e.target.value)} />
                 </div>
-                {renderSalarySelect('Lương OT/H', 'luong_ot_gio', salaryOptions.ot)}
-                {renderSalarySelect('Cơm', 'tien_com_ngay', salaryOptions.com)}
                 <div className="form-group">
                   <label>Tạo lúc</label>
                   <input value={form.created_at ? String(form.created_at).slice(0, 19).replace('T', ' ') : ''} readOnly />
