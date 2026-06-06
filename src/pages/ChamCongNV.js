@@ -104,14 +104,23 @@ export default function ChamCongNV() {
     try {
       const payload = {
         ...form,
+        nhan_vien_id: Number(form.nhan_vien_id),
         so_ngay_cong: Number(form.so_ngay_cong || 0),
         so_gio_ot: Number(form.so_gio_ot || 0),
         so_suat_com: Number(form.so_suat_com || 0),
       };
-      if (modal.mode === 'add') await addChamCongNv(payload);
-      else await updateChamCongNv(modal.id, payload);
+      if (modal.mode === 'add') {
+        await addChamCongNv(payload);
+        const month = String(payload.ngay_cham_cong).slice(0, 7);
+        const start = `${month}-01`;
+        const end = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).toISOString().slice(0, 10);
+        // Ensure the freshly created row is visible even when current filters are on another month/employee.
+        setFilters(prev => ({ ...prev, thang: month, tu_ngay: start, den_ngay: end, nhan_vien_id: '' }));
+      } else {
+        await updateChamCongNv(modal.id, payload);
+        load();
+      }
       setModal(null);
-      load();
     } catch (e) {
       setErr(e.message);
     }
