@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { chotBangLuong, getBangLuong } from '../utils/api';
-import { exportExcel as exportXlsx, fmt } from '../utils/printExcel';
+import { fmt, loadXlsxStyle } from '../utils/printExcel';
 
 function getCurrentWeekToken() {
   const now = new Date();
@@ -24,6 +24,21 @@ export default function BangLuong() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
+  const headerCellStyle = {
+    textAlign: 'center',
+    verticalAlign: 'middle',
+    border: '1px solid #2f7d57',
+    background: '#ffffff',
+    color: '#111',
+    fontWeight: 800,
+    padding: '8px 6px',
+  };
+
+  const subHeaderCellStyle = {
+    ...headerCellStyle,
+    padding: '6px',
+  };
+
   const load = () => {
     setLoading(true);
     const params = kieuKy === 'day' ? { ngay } : { tuan };
@@ -42,26 +57,106 @@ export default function BangLuong() {
     { label: 'Tổng lương', value: fmt(data.totals?.tong_luong || 0), color: '' },
   ]), [data]);
 
-  const handleExcel = () => {
-    const headers = ['STT', 'Mã NV', 'Họ tên', 'Phòng ban', 'Ngày công', 'OT giờ', 'Suất cơm', 'Lương ngày công', 'Lương OT/H', 'Cơm', 'Tiền ngày công', 'Tiền OT', 'Tiền cơm', 'Tổng lương', 'Trạng thái'];
-    const exRows = data.rows.map((row, index) => [
-      index + 1,
-      row.ma_nv,
-      row.ho_ten,
-      row.phong_ban || '',
-      Number(row.tong_ngay_cong || 0),
-      Number(row.tong_gio_ot || 0),
-      Number(row.tong_suat_com || 0),
-      Number(row.luong_ngay_cong || 0),
-      Number(row.luong_ot_gio || 0),
-      Number(row.tien_com_ngay || 0),
-      Number(row.tien_ngay_cong || 0),
-      Number(row.tien_ot || 0),
-      Number(row.tien_com || 0),
-      Number(row.tong_luong || 0),
-      row.da_chot ? 'Đã chốt' : 'Tạm tính',
-    ]);
-    exportXlsx(headers, exRows, `BangLuong_${data.ky_tinh || (kieuKy === 'day' ? ngay : tuan)}`);
+  const handleExcel = async () => {
+    try {
+      const XLSXStyle = await loadXlsxStyle();
+      const sheetRows = [
+        ['STT', 'MÃ NV', 'HỌ VÀ TÊN', 'LƯƠNG NGÀY CÔNG', 'LƯƠNG OT/H', 'CƠM', 'NGÀY CÔNG', null, 'OT', null, 'CƠM', null, 'THU NHẬP'],
+        [null, null, null, null, null, null, 'NGÀY', 'LƯƠNG', 'GIỜ', 'LƯƠNG', 'CÔNG', 'TIỀN CƠM', null],
+        ...data.rows.map((row, index) => [
+          index + 1,
+          row.ma_nv,
+          row.ho_ten,
+          Number(row.luong_ngay_cong || 0),
+          Number(row.luong_ot_gio || 0),
+          Number(row.tien_com_ngay || 0),
+          Number(row.tong_ngay_cong || 0),
+          Number(row.tien_ngay_cong || 0),
+          Number(row.tong_gio_ot || 0),
+          Number(row.tien_ot || 0),
+          Number(row.tong_suat_com || 0),
+          Number(row.tien_com || 0),
+          Number(row.tong_luong || 0),
+        ]),
+        ['TỔNG', '', '', '', '', '', Number(data.totals?.tong_ngay_cong || 0), '', Number(data.totals?.tong_gio_ot || 0), '', Number(data.totals?.tong_suat_com || 0), '', Number(data.totals?.tong_luong || 0)],
+      ];
+
+      const ws = XLSXStyle.utils.aoa_to_sheet(sheetRows);
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+        { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
+        { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } },
+        { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
+        { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } },
+        { s: { r: 0, c: 5 }, e: { r: 1, c: 5 } },
+        { s: { r: 0, c: 6 }, e: { r: 0, c: 7 } },
+        { s: { r: 0, c: 8 }, e: { r: 0, c: 9 } },
+        { s: { r: 0, c: 10 }, e: { r: 0, c: 11 } },
+        { s: { r: 0, c: 12 }, e: { r: 1, c: 12 } },
+        { s: { r: data.rows.length + 2, c: 0 }, e: { r: data.rows.length + 2, c: 5 } },
+      ];
+      ws['!cols'] = [
+        { wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 10 },
+        { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 16 },
+      ];
+      ws['!rows'] = [{ hpt: 26 }, { hpt: 22 }];
+
+      const range = XLSXStyle.utils.decode_range(ws['!ref']);
+      const headerStyle = {
+        font: { name: 'Times New Roman', bold: true, sz: 14 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        fill: { fgColor: { rgb: 'FFFFFF' } },
+        border: {
+          top: { style: 'thin', color: { rgb: '2F7D57' } },
+          bottom: { style: 'thin', color: { rgb: '2F7D57' } },
+          left: { style: 'thin', color: { rgb: '2F7D57' } },
+          right: { style: 'thin', color: { rgb: '2F7D57' } },
+        },
+      };
+      const subHeaderStyle = {
+        ...headerStyle,
+        font: { name: 'Times New Roman', bold: true, sz: 12 },
+      };
+      const bodyStyle = {
+        font: { name: 'Times New Roman', sz: 12 },
+        alignment: { vertical: 'center' },
+        border: {
+          top: { style: 'thin', color: { rgb: 'D7E6DD' } },
+          bottom: { style: 'thin', color: { rgb: 'D7E6DD' } },
+          left: { style: 'thin', color: { rgb: 'D7E6DD' } },
+          right: { style: 'thin', color: { rgb: 'D7E6DD' } },
+        },
+      };
+      const totalStyle = {
+        ...bodyStyle,
+        font: { name: 'Times New Roman', bold: true, sz: 12 },
+        fill: { fgColor: { rgb: 'EEF6F2' } },
+      };
+
+      for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+        for (let colIndex = range.s.c; colIndex <= range.e.c; colIndex += 1) {
+          const cellRef = XLSXStyle.utils.encode_cell({ r: rowIndex, c: colIndex });
+          if (!ws[cellRef]) continue;
+          if (rowIndex === 0) ws[cellRef].s = headerStyle;
+          else if (rowIndex === 1) ws[cellRef].s = subHeaderStyle;
+          else if (rowIndex === data.rows.length + 2) ws[cellRef].s = totalStyle;
+          else {
+            const isNum = colIndex === 0 || colIndex >= 3;
+            ws[cellRef].s = {
+              ...bodyStyle,
+              alignment: { horizontal: isNum ? 'right' : 'left', vertical: 'center' },
+              numFmt: isNum && typeof ws[cellRef].v === 'number' ? '#,##0.##' : undefined,
+            };
+          }
+        }
+      }
+
+      const wb = XLSXStyle.utils.book_new();
+      XLSXStyle.utils.book_append_sheet(wb, ws, 'BangLuong');
+      XLSXStyle.writeFile(wb, `BangLuong_${data.ky_tinh || (kieuKy === 'day' ? ngay : tuan)}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      alert(e.message || 'Không xuất được Excel.');
+    }
   };
 
   const handleChot = async () => {
@@ -133,47 +228,62 @@ export default function BangLuong() {
 
           {loading ? <div className="spinner" /> : (
             <div className="table-wrap">
-              <table>
+              <table style={{ borderCollapse: 'collapse', minWidth: 1100 }}>
                 <thead>
                   <tr>
-                    <th>STT</th>
-                    <th>Mã NV</th>
-                    <th>Họ tên</th>
-                    <th>Phòng ban</th>
-                    <th className="text-right">Ngày công</th>
-                    <th className="text-right">OT giờ</th>
-                    <th className="text-right">Suất cơm</th>
-                    <th className="text-right">Tiền ngày công</th>
-                    <th className="text-right">Tiền OT</th>
-                    <th className="text-right">Tiền cơm</th>
-                    <th className="text-right">Tổng lương</th>
-                    <th>Trạng thái</th>
+                    <th rowSpan="2" style={{ ...headerCellStyle, width: 60 }}>STT</th>
+                    <th rowSpan="2" style={headerCellStyle}>MÃ NV</th>
+                    <th rowSpan="2" style={{ ...headerCellStyle, minWidth: 180 }}>HỌ VÀ TÊN</th>
+                    <th rowSpan="2" style={headerCellStyle}>LƯƠNG NGÀY CÔNG</th>
+                    <th rowSpan="2" style={headerCellStyle}>LƯƠNG OT/H</th>
+                    <th rowSpan="2" style={headerCellStyle}>CƠM</th>
+                    <th colSpan="2" style={headerCellStyle}>NGÀY CÔNG</th>
+                    <th colSpan="2" style={headerCellStyle}>OT</th>
+                    <th colSpan="2" style={headerCellStyle}>CƠM</th>
+                    <th rowSpan="2" style={headerCellStyle}>THU NHẬP</th>
+                  </tr>
+                  <tr>
+                    <th style={subHeaderCellStyle}>NGÀY</th>
+                    <th style={subHeaderCellStyle}>LƯƠNG</th>
+                    <th style={subHeaderCellStyle}>GIỜ</th>
+                    <th style={subHeaderCellStyle}>LƯƠNG</th>
+                    <th style={subHeaderCellStyle}>CÔNG</th>
+                    <th style={subHeaderCellStyle}>TIỀN CƠM</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.rows.map((row, index) => (
                     <tr key={row.id}>
-                      <td className="text-center">{index + 1}</td>
-                      <td><b>{row.ma_nv}</b></td>
-                      <td>{row.ho_ten}</td>
-                      <td>{row.phong_ban}</td>
-                      <td className="text-right num">{fmt(row.tong_ngay_cong)}</td>
-                      <td className="text-right num">{fmt(row.tong_gio_ot)}</td>
-                      <td className="text-right num">{fmt(row.tong_suat_com)}</td>
-                      <td className="text-right num">{fmt(row.tien_ngay_cong)}</td>
-                      <td className="text-right num">{fmt(row.tien_ot)}</td>
-                      <td className="text-right num">{fmt(row.tien_com)}</td>
-                      <td className="text-right num"><b>{fmt(row.tong_luong)}</b></td>
-                      <td>
-                        <span className="badge" style={{ background: row.da_chot ? '#e8f5e9' : '#fff3e0', color: row.da_chot ? '#2e7d32' : '#e65100' }}>
-                          {row.da_chot ? 'Đã chốt' : 'Tạm tính'}
-                        </span>
-                      </td>
+                      <td className="text-center" style={{ border: '1px solid #d7e6dd' }}>{index + 1}</td>
+                      <td style={{ border: '1px solid #d7e6dd' }}><b>{row.ma_nv}</b></td>
+                      <td style={{ border: '1px solid #d7e6dd' }}>{row.ho_ten}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.luong_ngay_cong)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.luong_ot_gio)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.tien_com_ngay)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.tong_ngay_cong)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.tien_ngay_cong)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.tong_gio_ot)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.tien_ot)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.tong_suat_com)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd' }}>{fmt(row.tien_com)}</td>
+                      <td className="text-right num" style={{ border: '1px solid #d7e6dd', fontWeight: 800 }}><b>{fmt(row.tong_luong)}</b></td>
                     </tr>
                   ))}
+                  {!!data.rows.length && (
+                    <tr style={{ background: '#eef6f2' }}>
+                      <td colSpan={6} style={{ border: '1px solid #2f7d57', fontWeight: 800, textAlign: 'center', fontFamily: 'Times New Roman, serif' }}>TỔNG</td>
+                      <td className="text-right num" style={{ border: '1px solid #2f7d57', fontWeight: 800 }}>{fmt(data.totals?.tong_ngay_cong)}</td>
+                      <td style={{ border: '1px solid #2f7d57' }} />
+                      <td className="text-right num" style={{ border: '1px solid #2f7d57', fontWeight: 800 }}>{fmt(data.totals?.tong_gio_ot)}</td>
+                      <td style={{ border: '1px solid #2f7d57' }} />
+                      <td className="text-right num" style={{ border: '1px solid #2f7d57', fontWeight: 800 }}>{fmt(data.totals?.tong_suat_com)}</td>
+                      <td style={{ border: '1px solid #2f7d57' }} />
+                      <td className="text-right num" style={{ border: '1px solid #2f7d57', fontWeight: 800 }}>{fmt(data.totals?.tong_luong)}</td>
+                    </tr>
+                  )}
                   {!data.rows.length && (
                     <tr>
-                      <td colSpan={12} className="text-center" style={{ padding: 24, color: '#aaa' }}>Chưa có dữ liệu lương</td>
+                      <td colSpan={13} className="text-center" style={{ padding: 24, color: '#aaa' }}>Chưa có dữ liệu lương</td>
                     </tr>
                   )}
                 </tbody>
