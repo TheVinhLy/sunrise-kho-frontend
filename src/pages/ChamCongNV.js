@@ -140,7 +140,7 @@ export default function ChamCongNV() {
   };
 
   const handleExcelExport = () => {
-    const headers = ['STT', 'Ngày chấm công', 'Mã NV', 'Họ tên', 'Phòng ban', 'Số ngày công', 'Số giờ OT', 'Số suất cơm', 'Ghi chú'];
+    const headers = ['STT', 'Ngày chấm công', 'Mã NV', 'Họ tên', 'Phòng ban', 'Số giờ công', 'Số giờ OT', 'Số suất cơm', 'Ghi chú'];
     const exRows = rows.map((row, index) => [
       index + 1,
       row.ngay_cham_cong,
@@ -156,7 +156,7 @@ export default function ChamCongNV() {
   };
 
   const handleTemplate = () => {
-    const headers = ['Mã NV', 'Họ tên', 'Ngày chấm công', 'Số ngày công', 'Số giờ OT', 'Số suất cơm', 'Phòng ban', 'Chức vụ', 'SĐT', 'Lương ngày công', 'Lương OT/H', 'Cơm', 'Ghi chú'];
+    const headers = ['Mã NV', 'Họ tên', 'Ngày chấm công', 'Số giờ công', 'Số giờ OT', 'Số suất cơm', 'Phòng ban', 'Chức vụ', 'SĐT', 'Lương ngày công', 'Lương OT/H', 'Cơm', 'Ghi chú'];
     const exRows = [
       ['NV001', 'Nguyễn Văn A', `${filters.thang}-01`, 1, 2, 1, 'Sản xuất', 'Công nhân', '0900000000', 0, 0, 0, 'Mẫu import'],
       ['', '', '', '', '', '', '', '', '', '', '', '', ''],
@@ -282,7 +282,7 @@ export default function ChamCongNV() {
               <div className="stat-value">{rows.length}</div>
             </div>
             <div className="stat-card blue">
-              <div className="stat-label">Tổng ngày công</div>
+              <div className="stat-label">Tổng giờ công</div>
               <div className="stat-value">{Number(summary.tong_ngay_cong).toLocaleString('vi-VN')}</div>
             </div>
             <div className="stat-card orange">
@@ -338,7 +338,7 @@ export default function ChamCongNV() {
                     <th>Mã NV</th>
                     <th>Họ tên</th>
                     <th>Phòng ban</th>
-                    <th className="text-right">Ngày công</th>
+                    <th className="text-right">Giờ công</th>
                     <th className="text-right">OT giờ</th>
                     <th className="text-right">Suất cơm</th>
                     <th>Ghi chú</th>
@@ -405,7 +405,7 @@ export default function ChamCongNV() {
                   <input type="date" value={form.ngay_cham_cong || ''} onChange={e => set('ngay_cham_cong', e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>Số ngày công</label>
+                  <label>Số giờ công</label>
                   <input type="number" min="0" step="0.01" value={form.so_ngay_cong ?? ''} onChange={e => set('so_ngay_cong', e.target.value)} />
                 </div>
                 <div className="form-group">
