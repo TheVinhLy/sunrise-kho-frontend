@@ -16,9 +16,11 @@ function getCurrentWeekToken() {
 
 export default function BangLuong() {
   const currentDate = new Date().toISOString().slice(0, 10);
+  const currentMonth = new Date().toISOString().slice(0, 7);
   const [kieuKy, setKieuKy] = useState('week');
   const [ngay, setNgay] = useState(currentDate);
   const [tuan, setTuan] = useState(getCurrentWeekToken());
+  const [thang, setThang] = useState(currentMonth);
   const [data, setData] = useState({ rows: [], totals: { tong_ngay_cong: 0, tong_gio_ot: 0, tong_suat_com: 0, tong_luong: 0 }, tham_so: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,13 +43,13 @@ export default function BangLuong() {
 
   const load = () => {
     setLoading(true);
-    const params = kieuKy === 'day' ? { ngay } : { tuan };
+    const params = kieuKy === 'day' ? { ngay } : (kieuKy === 'week' ? { tuan } : { thang });
     getBangLuong(params)
       .then(result => { setData(result); setLoading(false); })
       .catch(e => { setErr(e.message); setLoading(false); });
   };
 
-  useEffect(load, [kieuKy, ngay, tuan]);
+  useEffect(load, [kieuKy, ngay, tuan, thang]);
 
   const summaryCards = useMemo(() => ([
     { label: 'Nhân viên', value: data.rows.length, color: 'blue' },
@@ -153,18 +155,19 @@ export default function BangLuong() {
 
       const wb = XLSXStyle.utils.book_new();
       XLSXStyle.utils.book_append_sheet(wb, ws, 'BangLuong');
-      XLSXStyle.writeFile(wb, `BangLuong_${data.ky_tinh || (kieuKy === 'day' ? ngay : tuan)}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      const kyFile = data.ky_tinh || (kieuKy === 'day' ? ngay : (kieuKy === 'week' ? tuan : thang));
+      XLSXStyle.writeFile(wb, `BangLuong_${kyFile}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (e) {
       alert(e.message || 'Không xuất được Excel.');
     }
   };
 
   const handleChot = async () => {
-    const kyText = data.label || data.ky_tinh || (kieuKy === 'day' ? ngay : tuan);
+    const kyText = data.label || data.ky_tinh || (kieuKy === 'day' ? ngay : (kieuKy === 'week' ? tuan : thang));
     if (!window.confirm(`Chốt bảng lương kỳ ${kyText}?`)) return;
     try {
       setSaving(true);
-      await chotBangLuong({ ky_tinh: data.ky_tinh || (kieuKy === 'day' ? `D:${ngay}` : `W:${tuan}`) });
+      await chotBangLuong({ ky_tinh: data.ky_tinh || (kieuKy === 'day' ? `D:${ngay}` : (kieuKy === 'week' ? `W:${tuan}` : thang)) });
       setSaving(false);
       load();
       alert('Đã chốt bảng lương.');
@@ -183,14 +186,19 @@ export default function BangLuong() {
             <select value={kieuKy} onChange={e => setKieuKy(e.target.value)}>
               <option value="week">Theo tuần</option>
               <option value="day">Theo ngày</option>
+              <option value="month">Theo tháng</option>
             </select>
             {kieuKy === 'day' ? (
               <div className="form-group" style={{ margin: 0 }}>
                 <input type="date" value={ngay} onChange={e => setNgay(e.target.value)} />
               </div>
-            ) : (
+            ) : kieuKy === 'week' ? (
               <div className="form-group" style={{ margin: 0 }}>
                 <input type="week" value={tuan} onChange={e => setTuan(e.target.value)} />
+              </div>
+            ) : (
+              <div className="form-group" style={{ margin: 0 }}>
+                <input type="month" value={thang} onChange={e => setThang(e.target.value)} />
               </div>
             )}
             <button className="btn btn-ghost" onClick={load}>🔄 Tính lại</button>
