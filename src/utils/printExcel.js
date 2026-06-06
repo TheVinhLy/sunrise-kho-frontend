@@ -205,6 +205,46 @@ export function exportExcel(headers, rows, filename = 'export') {
   document.head.appendChild(script);
 }
 
+export function loadXlsxStyle() {
+  if (window.XLSXStyle) return Promise.resolve(window.XLSXStyle);
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+    script.onload = () => {
+      window.XLSXStyle = window.XLSXStyle || window.XLSX;
+      resolve(window.XLSXStyle);
+    };
+    script.onerror = () => reject(new Error('Không tải được thư viện Excel.'));
+    document.head.appendChild(script);
+  });
+}
+
+export async function readExcelFile(file, sheetIndex = 0) {
+  const XLSXStyle = await loadXlsxStyle();
+  const data = await file.arrayBuffer();
+  const workbook = XLSXStyle.read(data, { type: 'array' });
+  const sheetName = workbook.SheetNames[sheetIndex] || workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  return XLSXStyle.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+}
+
+export async function readExcelTable(file, { sheetIndex = 0, headerRow = 1 } = {}) {
+  const XLSXStyle = await loadXlsxStyle();
+  const data = await file.arrayBuffer();
+  const workbook = XLSXStyle.read(data, { type: 'array' });
+  const sheetName = workbook.SheetNames[sheetIndex] || workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const rows = XLSXStyle.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
+  const headers = (rows[headerRow - 1] || []).map(value => String(value || '').trim());
+  return rows
+    .slice(headerRow)
+    .filter(row => Array.isArray(row) && row.some(cell => String(cell || '').trim() !== ''))
+    .map(row => headers.reduce((acc, header, index) => {
+      if (header) acc[header] = row[index] ?? '';
+      return acc;
+    }, {}));
+}
+
 // ── FORMAT ──────────────────────────────────────────────────────────
 export const fmt  = n => Number(n || 0).toLocaleString('vi-VN');
 export const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '';

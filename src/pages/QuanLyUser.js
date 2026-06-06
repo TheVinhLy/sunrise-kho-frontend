@@ -8,6 +8,10 @@ const ALL_MENUS = [
   { key:'nxt',       label:'📊 Nhập Xuất Tồn' },
   { key:'chi-tiet',  label:'🔍 Chi tiết N-X-T' },
   { key:'in-phieu',  label:'🖨️ In phiếu' },
+  { key:'nhan-vien', label:'👤 Nhân viên' },
+  { key:'cham-cong-nv', label:'🕒 Chấm công NV' },
+  { key:'luong-tham-so', label:'💰 Tham số lương' },
+  { key:'bang-luong', label:'📑 Bảng lương' },
 ];
 
 const BLANK = { username:'', password:'', ho_ten:'', role:'user', is_active:true, timeout_phut:30, cong_ty_id:'' };

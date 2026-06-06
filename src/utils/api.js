@@ -50,6 +50,29 @@ export const getDvt    = ()     => api('/api/dvt');
 export const addDvt    = (data) => api('/api/dvt', { method: 'POST', body: data });
 export const deleteDvt = (id)   => api(`/api/dvt/${id}`, { method: 'DELETE' });
 
+// Nhân viên
+export const getNhanVien    = ()          => api('/api/nhan-vien');
+export const addNhanVien    = (data)      => api('/api/nhan-vien', { method: 'POST', body: data });
+export const updateNhanVien = (id, data)  => api(`/api/nhan-vien/${id}`, { method: 'PUT', body: data });
+export const deleteNhanVien = (id)        => api(`/api/nhan-vien/${id}`, { method: 'DELETE' });
+
+// Tham số lương
+export const getLuongThamSo    = ()          => api('/api/luong-tham-so');
+export const addLuongThamSo    = (data)      => api('/api/luong-tham-so', { method: 'POST', body: data });
+export const updateLuongThamSo = (id, data)  => api(`/api/luong-tham-so/${id}`, { method: 'PUT', body: data });
+export const deleteLuongThamSo = (id)        => api(`/api/luong-tham-so/${id}`, { method: 'DELETE' });
+
+// Chấm công nhân viên
+export const getChamCongNv    = (params={}) => { const q = new URLSearchParams(params).toString(); return api('/api/cham-cong-nv'+(q?'?'+q:'')); };
+export const addChamCongNv    = (data)      => api('/api/cham-cong-nv', { method: 'POST', body: data });
+export const updateChamCongNv = (id, data)  => api(`/api/cham-cong-nv/${id}`, { method: 'PUT', body: data });
+export const deleteChamCongNv = (id)        => api(`/api/cham-cong-nv/${id}`, { method: 'DELETE' });
+export const importChamCongNv = (rows)      => api('/api/cham-cong-nv/import', { method: 'POST', body: { rows } });
+
+// Bảng lương
+export const getBangLuong  = (params={}) => { const q = new URLSearchParams(params).toString(); return api('/api/bang-luong'+(q?'?'+q:'')); };
+export const chotBangLuong = (data)      => api('/api/bang-luong/chot', { method: 'POST', body: data });
+
 // Danh mục
 export const getDanhMuc    = ()          => api('/api/danh-muc');
 export const addDanhMuc    = (data)      => api('/api/danh-muc', { method: 'POST', body: data });

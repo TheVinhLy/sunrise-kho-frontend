@@ -10,6 +10,10 @@ import NhapLieu      from './pages/NhapLieu';
 import NhapXuatTon   from './pages/NhapXuatTon';
 import ChiTiet       from './pages/ChiTiet';
 import InPhieu       from './pages/InPhieu';
+import NhanVien      from './pages/NhanVien';
+import ChamCongNV    from './pages/ChamCongNV';
+import LuongThamSo   from './pages/LuongThamSo';
+import BangLuong     from './pages/BangLuong';
 import QuanLyUser    from './pages/QuanLyUser';
 import QuanLyCongTy  from './pages/QuanLyCongTy';
 import QuanLyNCC     from './pages/QuanLyNCC';
@@ -24,6 +28,10 @@ const ALL_NAV = [
   { to:'/nxt',          icon:'📊', label:'Nhập - Xuất - Tồn', key:'nxt' },
   { to:'/chi-tiet',     icon:'🔍', label:'Chi tiết N-X-T',   key:'chi-tiet' },
   { to:'/in-phieu',     icon:'🖨️', label:'In phiếu',          key:'in-phieu' },
+  { to:'/ql-nhan-vien', icon:'👤', label:'Nhân viên',         key:'nhan-vien' },
+  { to:'/cham-cong-nv', icon:'🕒', label:'Chấm công NV',      key:'cham-cong-nv' },
+  { to:'/luong-tham-so', icon:'💰', label:'Tham số lương',    key:'luong-tham-so' },
+  { to:'/bang-luong',   icon:'📑', label:'Bảng lương',        key:'bang-luong' },
   { to:'/backup',       icon:'💾', label:'Backup DB',          key:'__admin__' },
   { to:'/ql-cong-ty',   icon:'🏭', label:'Quản lý công ty',   key:'__admin__' },
   { to:'/ql-nha-cc',    icon:'🏭', label:'Nhà cung cấp',       key:'nha-cc' },
@@ -233,6 +241,10 @@ export default function App() {
               <Route path="/nxt"          element={<ProtectedRoute menuKey="nxt"       user={user}><NhapXuatTon/></ProtectedRoute>}/>
               <Route path="/chi-tiet"     element={<ProtectedRoute menuKey="chi-tiet"  user={user}><ChiTiet/></ProtectedRoute>}/>
               <Route path="/in-phieu"     element={<ProtectedRoute menuKey="in-phieu"  user={user}><InPhieu/></ProtectedRoute>}/>
+              <Route path="/ql-nhan-vien" element={<ProtectedRoute menuKey="nhan-vien" user={user}><NhanVien/></ProtectedRoute>}/>
+              <Route path="/cham-cong-nv" element={<ProtectedRoute menuKey="cham-cong-nv" user={user}><ChamCongNV/></ProtectedRoute>}/>
+              <Route path="/luong-tham-so" element={<ProtectedRoute menuKey="luong-tham-so" user={user}><LuongThamSo/></ProtectedRoute>}/>
+              <Route path="/bang-luong"   element={<ProtectedRoute menuKey="bang-luong" user={user}><BangLuong/></ProtectedRoute>}/>
               <Route path="/backup"       element={<ProtectedRoute menuKey="__admin__" user={user}><Backup/></ProtectedRoute>}/>
               <Route path="/ql-cong-ty"   element={<ProtectedRoute menuKey="__admin__" user={user}><QuanLyCongTy/></ProtectedRoute>}/>
               <Route path="/ql-nha-cc"    element={<ProtectedRoute menuKey="nha-cc"    user={user}><QuanLyNCC/></ProtectedRoute>}/>
