@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { getNhanVien, addNhanVien, updateNhanVien, deleteNhanVien } from '../utils/api';
+import { getNhanVien, addNhanVien, updateNhanVien, deleteNhanVien, getLuongThamSo } from '../utils/api';
 import { exportExcel } from '../utils/printExcel';
 
 const BLANK = {
   ma_nv: '',
   ho_ten: '',
+  cccd: '',
+  dia_chi: '',
+  trang_thai: 'dang_lam',
   phong_ban: '',
   chuc_vu: '',
   sdt: '',
+  hinh_thuc_luong: 'ngay_cong',
+  luong_co_ban: '',
+  luong_ngay: '',
+  he_so_ot: 1,
+  phu_cap: '',
   ngay_vao_lam: '',
   luong_ngay_cong: '',
   luong_ot_gio: '',
@@ -18,6 +26,38 @@ const BLANK = {
 
 const money = (value) => Number(value || 0).toLocaleString('vi-VN');
 
+const norm = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '_');
+
+const classifyType = (row) => {
+  const code = norm(row.ma_tham_so);
+  const name = norm(row.ten_tham_so);
+  if (code.includes('ngay_cong') || name.includes('ngay_cong') || name.includes('luong_ngay')) return 'ngay_cong';
+  if (code.includes('ot_gio') || code.includes('ot') || name.includes('ot') || name.includes('tang_ca')) return 'ot_gio';
+  if (code.includes('com') || name.includes('com')) return 'com';
+  return null;
+};
+
+const buildOptions = (rows, type) => {
+  const seen = new Set();
+  return rows
+    .filter(row => classifyType(row) === type)
+    .map(row => ({
+      value: Number(row.gia_tri || 0),
+      label: `${row.ten_tham_so || row.ma_tham_so} - ${money(row.gia_tri)}${row.don_vi ? ` ${row.don_vi}` : ''}`,
+    }))
+    .filter(item => {
+      const key = `${item.value}|${item.label}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.value - b.value);
+};
+
 export default function NhanVien() {
   const [rows, setRows] = useState([]);
   const [modal, setModal] = useState(null);
@@ -25,11 +65,20 @@ export default function NhanVien() {
   const [search, setSearch] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
+  const [salaryOptions, setSalaryOptions] = useState({ ngayCong: [], ot: [], com: [] });
 
   const load = () => {
     setLoading(true);
-    getNhanVien()
-      .then(data => { setRows(data); setLoading(false); })
+    Promise.all([getNhanVien(), getLuongThamSo().catch(() => [])])
+      .then(([data, params]) => {
+        setRows(data);
+        setSalaryOptions({
+          ngayCong: buildOptions(params, 'ngay_cong'),
+          ot: buildOptions(params, 'ot_gio'),
+          com: buildOptions(params, 'com'),
+        });
+        setLoading(false);
+      })
       .catch(e => { setErr(e.message); setLoading(false); });
   };
 
@@ -37,7 +86,18 @@ export default function NhanVien() {
 
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
   const openAdd = () => { setForm(BLANK); setErr(''); setModal({ mode: 'add' }); };
-  const openEdit = (row) => { setForm({ ...BLANK, ...row, ngay_vao_lam: row.ngay_vao_lam || '' }); setErr(''); setModal({ mode: 'edit', id: row.id }); };
+  const openEdit = (row) => {
+    setForm({
+      ...BLANK,
+      ...row,
+      trang_thai: row.trang_thai || (row.is_active === false ? 'nghi_viec' : 'dang_lam'),
+      hinh_thuc_luong: row.hinh_thuc_luong || 'ngay_cong',
+      ngay_vao_lam: row.ngay_vao_lam || '',
+      he_so_ot: row.he_so_ot ?? 1,
+    });
+    setErr('');
+    setModal({ mode: 'edit', id: row.id });
+  };
 
   const save = async () => {
     if (!form.ma_nv || !form.ho_ten) {
@@ -47,9 +107,16 @@ export default function NhanVien() {
     try {
       const payload = {
         ...form,
+        trang_thai: form.trang_thai || 'dang_lam',
+        hinh_thuc_luong: form.hinh_thuc_luong || 'ngay_cong',
+        luong_co_ban: form.luong_co_ban === '' ? null : Number(form.luong_co_ban),
+        luong_ngay: form.luong_ngay === '' ? null : Number(form.luong_ngay),
+        he_so_ot: form.he_so_ot === '' ? 1 : Number(form.he_so_ot),
+        phu_cap: form.phu_cap === '' ? null : Number(form.phu_cap),
         luong_ngay_cong: form.luong_ngay_cong === '' ? null : Number(form.luong_ngay_cong),
         luong_ot_gio: form.luong_ot_gio === '' ? null : Number(form.luong_ot_gio),
         tien_com_ngay: form.tien_com_ngay === '' ? null : Number(form.tien_com_ngay),
+        is_active: (form.trang_thai || 'dang_lam') === 'dang_lam',
       };
       if (modal.mode === 'add') await addNhanVien(payload);
       else await updateNhanVien(modal.id, payload);
@@ -72,22 +139,67 @@ export default function NhanVien() {
   });
 
   const handleExcel = () => {
-    const headers = ['STT', 'Mã NV', 'Họ tên', 'Phòng ban', 'Chức vụ', 'SĐT', 'Ngày vào làm', 'Lương ngày công', 'Lương OT/H', 'Cơm', 'Ghi chú', 'Trạng thái'];
+    const headers = ['STT', 'Mã NV', 'Họ tên', 'CCCD', 'Địa chỉ', 'Trạng thái', 'Hình thức lương', 'Lương cơ bản', 'Lương ngày', 'Hệ số OT', 'Phụ cấp', 'Phòng ban', 'Chức vụ', 'SĐT', 'Ngày vào làm', 'Lương OT/H', 'Cơm', 'Ghi chú', 'Tạo lúc', 'Cập nhật lúc'];
     const exRows = filtered.map((row, index) => [
       index + 1,
       row.ma_nv,
       row.ho_ten,
+      row.cccd || '',
+      row.dia_chi || '',
+      row.trang_thai || (row.is_active ? 'dang_lam' : 'nghi_viec'),
+      row.hinh_thuc_luong || 'ngay_cong',
+      Number(row.luong_co_ban || 0),
+      Number(row.luong_ngay || row.luong_ngay_cong || 0),
+      Number(row.he_so_ot || 1),
+      Number(row.phu_cap || 0),
       row.phong_ban || '',
       row.chuc_vu || '',
       row.sdt || '',
       row.ngay_vao_lam || '',
-      Number(row.luong_ngay_cong || 0),
       Number(row.luong_ot_gio || 0),
       Number(row.tien_com_ngay || 0),
       row.ghi_chu || '',
-      row.is_active ? 'Hoạt động' : 'Đã khóa',
+      row.created_at || '',
+      row.updated_at || '',
     ]);
     exportExcel(headers, exRows, 'DanhSachNhanVien');
+  };
+
+  const renderSalarySelect = (label, fieldKey, options, syncLuongNgayCong = false) => {
+    const current = form[fieldKey] === null || form[fieldKey] === undefined ? '' : String(form[fieldKey]);
+    const hasCurrent = options.some(opt => String(opt.value) === current);
+    return (
+      <div className="form-group">
+        <label>{label}</label>
+        <select
+          value={current}
+          onChange={e => {
+            const value = e.target.value;
+            set(fieldKey, value === '' ? '' : Number(value));
+            if (syncLuongNgayCong) set('luong_ngay_cong', value === '' ? '' : Number(value));
+          }}
+        >
+          <option value="">-- Chọn từ tham số / nhập tay --</option>
+          {!hasCurrent && current !== '' && (
+            <option value={current}>Giá trị hiện tại - {money(current)}</option>
+          )}
+          {options.map((opt, idx) => (
+            <option key={`${fieldKey}_${idx}_${opt.value}`} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={form[fieldKey] ?? ''}
+          onChange={e => {
+            set(fieldKey, e.target.value);
+            if (syncLuongNgayCong) set('luong_ngay_cong', e.target.value);
+          }}
+          placeholder="Nhập tay nếu không chọn trong danh sách"
+        />
+      </div>
+    );
   };
 
   return (
@@ -118,13 +230,20 @@ export default function NhanVien() {
                     <th style={{ width: 40 }}>STT</th>
                     <th>Mã NV</th>
                     <th>Họ tên</th>
+                    <th>CCCD</th>
+                    <th>Địa chỉ</th>
+                    <th>Trạng thái</th>
+                    <th>Hình thức lương</th>
+                    <th className="text-right">Lương cơ bản</th>
+                    <th className="text-right">Lương ngày</th>
+                    <th className="text-right">Hệ số OT</th>
+                    <th className="text-right">Phụ cấp</th>
                     <th>Phòng ban</th>
                     <th>Chức vụ</th>
                     <th>SĐT</th>
-                    <th className="text-right">Lương ngày công</th>
                     <th className="text-right">Lương OT/H</th>
                     <th className="text-right">Cơm</th>
-                    <th>Trạng thái</th>
+                    <th>Ngày vào làm</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -134,17 +253,24 @@ export default function NhanVien() {
                       <td className="text-center">{index + 1}</td>
                       <td><b>{row.ma_nv}</b></td>
                       <td>{row.ho_ten}</td>
+                      <td>{row.cccd}</td>
+                      <td>{row.dia_chi}</td>
+                      <td>
+                        <span className="badge" style={{ background: (row.trang_thai || (row.is_active ? 'dang_lam' : 'nghi_viec')) === 'dang_lam' ? '#e8f5e9' : '#fdecea', color: (row.trang_thai || (row.is_active ? 'dang_lam' : 'nghi_viec')) === 'dang_lam' ? '#2e7d32' : '#c0392b' }}>
+                          {(row.trang_thai || (row.is_active ? 'dang_lam' : 'nghi_viec')) === 'dang_lam' ? 'Đang làm' : 'Nghỉ việc'}
+                        </span>
+                      </td>
+                      <td>{row.hinh_thuc_luong === 'thang' ? 'Tháng' : 'Ngày công'}</td>
+                      <td className="text-right num">{money(row.luong_co_ban)}</td>
+                      <td className="text-right num">{money(row.luong_ngay || row.luong_ngay_cong)}</td>
+                      <td className="text-right num">{money(row.he_so_ot || 1)}</td>
+                      <td className="text-right num">{money(row.phu_cap)}</td>
                       <td>{row.phong_ban}</td>
                       <td>{row.chuc_vu}</td>
                       <td>{row.sdt}</td>
-                      <td className="text-right num">{money(row.luong_ngay_cong)}</td>
                       <td className="text-right num">{money(row.luong_ot_gio)}</td>
                       <td className="text-right num">{money(row.tien_com_ngay)}</td>
-                      <td>
-                        <span className="badge" style={{ background: row.is_active ? '#e8f5e9' : '#fdecea', color: row.is_active ? '#2e7d32' : '#c0392b' }}>
-                          {row.is_active ? 'Hoạt động' : 'Đã khóa'}
-                        </span>
-                      </td>
+                      <td>{row.ngay_vao_lam || ''}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => openEdit(row)}>✏️</button>{' '}
                         <button className="btn btn-danger btn-sm" onClick={() => del(row)}>🗑️</button>
@@ -153,7 +279,7 @@ export default function NhanVien() {
                   ))}
                   {!filtered.length && (
                     <tr>
-                      <td colSpan={11} className="text-center" style={{ padding: 24, color: '#aaa' }}>Chưa có nhân viên nào</td>
+                      <td colSpan={17} className="text-center" style={{ padding: 24, color: '#aaa' }}>Chưa có nhân viên nào</td>
                     </tr>
                   )}
                 </tbody>
@@ -182,6 +308,21 @@ export default function NhanVien() {
                   <input value={form.ho_ten} onChange={e => set('ho_ten', e.target.value)} placeholder="Nguyễn Văn A" />
                 </div>
                 <div className="form-group">
+                  <label>CCCD</label>
+                  <input value={form.cccd || ''} onChange={e => set('cccd', e.target.value)} placeholder="0792..." />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Địa chỉ</label>
+                  <input value={form.dia_chi || ''} onChange={e => set('dia_chi', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>Trạng thái</label>
+                  <select value={form.trang_thai || 'dang_lam'} onChange={e => set('trang_thai', e.target.value)}>
+                    <option value="dang_lam">Đang làm</option>
+                    <option value="nghi_viec">Nghỉ việc</option>
+                  </select>
+                </div>
+                <div className="form-group">
                   <label>Phòng ban</label>
                   <input value={form.phong_ban || ''} onChange={e => set('phong_ban', e.target.value)} />
                 </div>
@@ -194,27 +335,38 @@ export default function NhanVien() {
                   <input value={form.sdt || ''} onChange={e => set('sdt', e.target.value)} />
                 </div>
                 <div className="form-group">
+                  <label>Hình thức lương</label>
+                  <select value={form.hinh_thuc_luong || 'ngay_cong'} onChange={e => set('hinh_thuc_luong', e.target.value)}>
+                    <option value="ngay_cong">Ngày công</option>
+                    <option value="thang">Tháng</option>
+                  </select>
+                </div>
+                <div className="form-group">
                   <label>Ngày vào làm</label>
                   <input type="date" value={form.ngay_vao_lam || ''} onChange={e => set('ngay_vao_lam', e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>Lương ngày công</label>
-                  <input type="number" min="0" step="0.01" value={form.luong_ngay_cong ?? ''} onChange={e => set('luong_ngay_cong', e.target.value)} />
+                  <label>Lương cơ bản</label>
+                  <input type="number" min="0" step="0.01" value={form.luong_co_ban ?? ''} onChange={e => set('luong_co_ban', e.target.value)} />
+                </div>
+                {renderSalarySelect('Lương ngày công', 'luong_ngay', salaryOptions.ngayCong, true)}
+                <div className="form-group">
+                  <label>Hệ số OT</label>
+                  <input type="number" min="0" step="0.01" value={form.he_so_ot ?? 1} onChange={e => set('he_so_ot', e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>Lương OT/H</label>
-                  <input type="number" min="0" step="0.01" value={form.luong_ot_gio ?? ''} onChange={e => set('luong_ot_gio', e.target.value)} />
+                  <label>Phụ cấp</label>
+                  <input type="number" min="0" step="0.01" value={form.phu_cap ?? ''} onChange={e => set('phu_cap', e.target.value)} />
+                </div>
+                {renderSalarySelect('Lương OT/H', 'luong_ot_gio', salaryOptions.ot)}
+                {renderSalarySelect('Cơm', 'tien_com_ngay', salaryOptions.com)}
+                <div className="form-group">
+                  <label>Tạo lúc</label>
+                  <input value={form.created_at ? String(form.created_at).slice(0, 19).replace('T', ' ') : ''} readOnly />
                 </div>
                 <div className="form-group">
-                  <label>Cơm</label>
-                  <input type="number" min="0" step="0.01" value={form.tien_com_ngay ?? ''} onChange={e => set('tien_com_ngay', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Trạng thái</label>
-                  <select value={String(form.is_active)} onChange={e => set('is_active', e.target.value === 'true')}>
-                    <option value="true">Hoạt động</option>
-                    <option value="false">Đã khóa</option>
-                  </select>
+                  <label>Cập nhật lúc</label>
+                  <input value={form.updated_at ? String(form.updated_at).slice(0, 19).replace('T', ' ') : ''} readOnly />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Ghi chú</label>

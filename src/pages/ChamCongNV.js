@@ -77,7 +77,11 @@ export default function ChamCongNV() {
 
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
   const openAdd = () => { setForm(BLANK); setErr(''); setModal({ mode: 'add' }); };
-  const openEdit = (row) => { setForm({ ...BLANK, ...row }); setErr(''); setModal({ mode: 'edit', id: row.id }); };
+  const openEdit = (row) => {
+    setForm({ ...BLANK, ...row, nhan_vien_id: String(row.nhan_vien_id || '') });
+    setErr('');
+    setModal({ mode: 'edit', id: row.id });
+  };
 
   const save = async () => {
     if (!form.nhan_vien_id || !form.ngay_cham_cong) {
@@ -216,7 +220,17 @@ export default function ChamCongNV() {
     return acc;
   }, { tong_ngay_cong: 0, tong_gio_ot: 0, tong_suat_com: 0 }), [rows]);
 
-  const filteredNV = dsNV.filter(row => row.is_active);
+  const employeeOptions = useMemo(() => dsNV
+    .filter(row => row.is_active)
+    .map(row => ({
+      id: String(row.id),
+      label: [row.ma_nv, row.ho_ten, row.phong_ban || row.chuc_vu || ''].filter(Boolean).join(' - '),
+    })), [dsNV]);
+
+  const selectedNhanVien = useMemo(
+    () => dsNV.find(row => String(row.id) === String(form.nhan_vien_id || '')) || null,
+    [dsNV, form.nhan_vien_id]
+  );
 
   return (
     <div>
@@ -276,7 +290,7 @@ export default function ChamCongNV() {
               <label>Nhân viên</label>
               <select value={filters.nhan_vien_id} onChange={e => setFilters(prev => ({ ...prev, nhan_vien_id: e.target.value }))}>
                 <option value="">Tất cả</option>
-                {filteredNV.map(row => <option key={row.id} value={row.id}>{row.ma_nv} - {row.ho_ten}</option>)}
+                {employeeOptions.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}
               </select>
             </div>
             <button className="btn btn-ghost" onClick={() => setFilters({ thang: monthKey, tu_ngay: monthStart, den_ngay: monthEnd, nhan_vien_id: '' })}>Xóa lọc</button>
@@ -341,10 +355,18 @@ export default function ChamCongNV() {
               <div className="form-grid">
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Nhân viên *</label>
-                  <select value={form.nhan_vien_id || ''} onChange={e => set('nhan_vien_id', e.target.value)}>
+                  <select
+                    value={form.nhan_vien_id || ''}
+                    onChange={e => set('nhan_vien_id', e.target.value)}
+                    disabled={modal.mode === 'edit'}
+                  >
                     <option value="">-- Chọn nhân viên --</option>
-                    {filteredNV.map(row => <option key={row.id} value={row.id}>{row.ma_nv} - {row.ho_ten}</option>)}
+                    {employeeOptions.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Mã NV</label>
+                  <input type="text" value={selectedNhanVien?.ma_nv || ''} readOnly placeholder="Tự động theo nhân viên" />
                 </div>
                 <div className="form-group">
                   <label>Ngày chấm công *</label>

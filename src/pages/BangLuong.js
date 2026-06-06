@@ -2,9 +2,23 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { chotBangLuong, getBangLuong } from '../utils/api';
 import { exportExcel as exportXlsx, fmt } from '../utils/printExcel';
 
+function getCurrentWeekToken() {
+  const now = new Date();
+  const utcDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const day = (utcDate.getUTCDay() + 6) % 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 3 - day);
+  const firstThursday = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 4));
+  const firstDay = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() + 3 - firstDay);
+  const week = 1 + Math.round((utcDate - firstThursday) / (7 * 24 * 3600 * 1000));
+  return `${utcDate.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
 export default function BangLuong() {
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const [thang, setThang] = useState(currentMonth);
+  const currentDate = new Date().toISOString().slice(0, 10);
+  const [kieuKy, setKieuKy] = useState('week');
+  const [ngay, setNgay] = useState(currentDate);
+  const [tuan, setTuan] = useState(getCurrentWeekToken());
   const [data, setData] = useState({ rows: [], totals: { tong_ngay_cong: 0, tong_gio_ot: 0, tong_suat_com: 0, tong_luong: 0 }, tham_so: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -12,12 +26,13 @@ export default function BangLuong() {
 
   const load = () => {
     setLoading(true);
-    getBangLuong({ thang })
+    const params = kieuKy === 'day' ? { ngay } : { tuan };
+    getBangLuong(params)
       .then(result => { setData(result); setLoading(false); })
       .catch(e => { setErr(e.message); setLoading(false); });
   };
 
-  useEffect(load, [thang]);
+  useEffect(load, [kieuKy, ngay, tuan]);
 
   const summaryCards = useMemo(() => ([
     { label: 'Nhân viên', value: data.rows.length, color: 'blue' },
@@ -46,14 +61,15 @@ export default function BangLuong() {
       Number(row.tong_luong || 0),
       row.da_chot ? 'Đã chốt' : 'Tạm tính',
     ]);
-    exportXlsx(headers, exRows, `BangLuong_${thang}`);
+    exportXlsx(headers, exRows, `BangLuong_${data.ky_tinh || (kieuKy === 'day' ? ngay : tuan)}`);
   };
 
   const handleChot = async () => {
-    if (!window.confirm(`Chốt bảng lương tháng ${thang}?`)) return;
+    const kyText = data.label || data.ky_tinh || (kieuKy === 'day' ? ngay : tuan);
+    if (!window.confirm(`Chốt bảng lương kỳ ${kyText}?`)) return;
     try {
       setSaving(true);
-      await chotBangLuong({ ky_tinh: thang });
+      await chotBangLuong({ ky_tinh: data.ky_tinh || (kieuKy === 'day' ? `D:${ngay}` : `W:${tuan}`) });
       setSaving(false);
       load();
       alert('Đã chốt bảng lương.');
@@ -67,17 +83,33 @@ export default function BangLuong() {
     <div>
       <div className="card">
         <div className="card-header">
-          <h2>📑 Bảng lương tháng</h2>
+          <h2>📑 Bảng lương theo kỳ</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <input type="month" value={thang} onChange={e => setThang(e.target.value)} />
-            </div>
+            <select value={kieuKy} onChange={e => setKieuKy(e.target.value)}>
+              <option value="week">Theo tuần</option>
+              <option value="day">Theo ngày</option>
+            </select>
+            {kieuKy === 'day' ? (
+              <div className="form-group" style={{ margin: 0 }}>
+                <input type="date" value={ngay} onChange={e => setNgay(e.target.value)} />
+              </div>
+            ) : (
+              <div className="form-group" style={{ margin: 0 }}>
+                <input type="week" value={tuan} onChange={e => setTuan(e.target.value)} />
+              </div>
+            )}
             <button className="btn btn-ghost" onClick={load}>🔄 Tính lại</button>
             <button className="btn btn-ghost" onClick={handleExcel}>📥 Xuất Excel</button>
             <button className="btn btn-primary" onClick={handleChot} disabled={saving}>{saving ? 'Đang chốt...' : '✅ Chốt lương'}</button>
           </div>
         </div>
         <div className="card-body">
+          <div className="filter-bar" style={{ marginBottom: 20 }}>
+            <span className="badge" style={{ background: '#eef6f2', color: '#1b3a2f' }}>
+              Kỳ tính: {data.label || data.ky_tinh || '-'}
+            </span>
+          </div>
+
           <div className="stats-grid">
             {summaryCards.map(card => (
               <div key={card.label} className={`stat-card ${card.color || ''}`.trim()}>
