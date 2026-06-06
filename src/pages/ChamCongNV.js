@@ -221,7 +221,13 @@ export default function ChamCongNV() {
   }, { tong_ngay_cong: 0, tong_gio_ot: 0, tong_suat_com: 0 }), [rows]);
 
   const employeeOptions = useMemo(() => dsNV
-    .filter(row => row.is_active)
+    .filter(row => {
+      const status = String(row.trang_thai || '').trim().toLowerCase();
+      // Keep list visible for legacy data where status/is_active may be missing or inconsistent.
+      if (status === 'nghi_viec' || status === 'nghiviec') return false;
+      if (row.is_active === false) return false;
+      return true;
+    })
     .map(row => ({
       id: String(row.id),
       label: [row.ma_nv, row.ho_ten, row.phong_ban || row.chuc_vu || ''].filter(Boolean).join(' - '),

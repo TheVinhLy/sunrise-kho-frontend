@@ -230,19 +230,19 @@ export default function NhanVien() {
                     <th style={{ width: 40 }}>STT</th>
                     <th>Mã NV</th>
                     <th>Họ tên</th>
+                    <th className="text-right">Lương ngày</th>
+                    <th className="text-right">Hệ số OT</th>
+                    <th className="text-right">Lương OT/H</th>
+                    <th className="text-right">Cơm</th>
                     <th>CCCD</th>
                     <th>Địa chỉ</th>
                     <th>Trạng thái</th>
                     <th>Hình thức lương</th>
                     <th className="text-right">Lương cơ bản</th>
-                    <th className="text-right">Lương ngày</th>
-                    <th className="text-right">Hệ số OT</th>
                     <th className="text-right">Phụ cấp</th>
                     <th>Phòng ban</th>
                     <th>Chức vụ</th>
                     <th>SĐT</th>
-                    <th className="text-right">Lương OT/H</th>
-                    <th className="text-right">Cơm</th>
                     <th>Ngày vào làm</th>
                     <th></th>
                   </tr>
@@ -253,6 +253,10 @@ export default function NhanVien() {
                       <td className="text-center">{index + 1}</td>
                       <td><b>{row.ma_nv}</b></td>
                       <td>{row.ho_ten}</td>
+                      <td className="text-right num">{money(row.luong_ngay || row.luong_ngay_cong)}</td>
+                      <td className="text-right num">{money(row.he_so_ot || 1)}</td>
+                      <td className="text-right num">{money(row.luong_ot_gio)}</td>
+                      <td className="text-right num">{money(row.tien_com_ngay)}</td>
                       <td>{row.cccd}</td>
                       <td>{row.dia_chi}</td>
                       <td>
@@ -262,14 +266,10 @@ export default function NhanVien() {
                       </td>
                       <td>{row.hinh_thuc_luong === 'thang' ? 'Tháng' : 'Ngày công'}</td>
                       <td className="text-right num">{money(row.luong_co_ban)}</td>
-                      <td className="text-right num">{money(row.luong_ngay || row.luong_ngay_cong)}</td>
-                      <td className="text-right num">{money(row.he_so_ot || 1)}</td>
                       <td className="text-right num">{money(row.phu_cap)}</td>
                       <td>{row.phong_ban}</td>
                       <td>{row.chuc_vu}</td>
                       <td>{row.sdt}</td>
-                      <td className="text-right num">{money(row.luong_ot_gio)}</td>
-                      <td className="text-right num">{money(row.tien_com_ngay)}</td>
                       <td>{row.ngay_vao_lam || ''}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => openEdit(row)}>✏️</button>{' '}
