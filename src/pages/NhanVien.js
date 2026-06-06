@@ -96,59 +96,59 @@ export default function NhanVien() {
       he_so_ot: row.he_so_ot ?? 1,
     });
     setErr('');
-    setModal({ mode: 'edit', id: row.id });
-  };
-
-  const save = async () => {
-    if (!form.ma_nv || !form.ho_ten) {
-      setErr('Nhập mã nhân viên và họ tên');
-      return;
-    }
-    try {
-      const payload = {
-        ...form,
-        trang_thai: form.trang_thai || 'dang_lam',
-        hinh_thuc_luong: form.hinh_thuc_luong || 'ngay_cong',
-        luong_co_ban: form.luong_co_ban === '' ? null : Number(form.luong_co_ban),
-        luong_ngay: form.luong_ngay === '' ? null : Number(form.luong_ngay),
-        he_so_ot: form.he_so_ot === '' ? 1 : Number(form.he_so_ot),
-        phu_cap: form.phu_cap === '' ? null : Number(form.phu_cap),
-        luong_ngay_cong: form.luong_ngay_cong === '' ? null : Number(form.luong_ngay_cong),
-        luong_ot_gio: form.luong_ot_gio === '' ? null : Number(form.luong_ot_gio),
-        tien_com_ngay: form.tien_com_ngay === '' ? null : Number(form.tien_com_ngay),
-        is_active: (form.trang_thai || 'dang_lam') === 'dang_lam',
-      };
-      if (modal.mode === 'add') await addNhanVien(payload);
-      else await updateNhanVien(modal.id, payload);
-      setModal(null);
-      load();
-    } catch (e) {
-      setErr(e.message);
-    }
-  };
-
-  const del = async (row) => {
-    if (!window.confirm(`Xóa nhân viên "${row.ho_ten}"?`)) return;
-    await deleteNhanVien(row.id).catch(e => alert(e.message));
     load();
   };
 
   const filtered = rows.filter(row => {
-    const text = `${row.ma_nv || ''} ${row.ho_ten || ''} ${row.phong_ban || ''} ${row.chuc_vu || ''}`.toLowerCase();
-    return !search || text.includes(search.toLowerCase());
-  });
-
   const handleExcel = () => {
     const headers = ['STT', 'Mã NV', 'Họ tên', 'CCCD', 'Địa chỉ', 'Trạng thái', 'Hình thức lương', 'Lương cơ bản', 'Lương ngày', 'Hệ số OT', 'Phụ cấp', 'Phòng ban', 'Chức vụ', 'SĐT', 'Ngày vào làm', 'Lương OT/H', 'Cơm', 'Ghi chú', 'Tạo lúc', 'Cập nhật lúc'];
     const exRows = filtered.map((row, index) => [
       index + 1,
       row.ma_nv,
-      row.ho_ten,
-      row.cccd || '',
-      row.dia_chi || '',
-      row.trang_thai || (row.is_active ? 'dang_lam' : 'nghi_viec'),
       row.hinh_thuc_luong || 'ngay_cong',
       Number(row.luong_co_ban || 0),
+                <div className="form-group">
+                  <label>CCCD</label>
+                  <input value={form.cccd || ''} onChange={e => set('cccd', e.target.value)} placeholder="0792..." />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Địa chỉ</label>
+                  <input value={form.dia_chi || ''} onChange={e => set('dia_chi', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>Trạng thái</label>
+                  <select value={form.trang_thai || 'dang_lam'} onChange={e => set('trang_thai', e.target.value)}>
+                    <option value="dang_lam">Đang làm</option>
+                    <option value="nghi_viec">Nghỉ việc</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Hình thức lương</label>
+                  <select value={form.hinh_thuc_luong || 'ngay_cong'} onChange={e => set('hinh_thuc_luong', e.target.value)}>
+                    <option value="ngay_cong">Ngày công</option>
+                    <option value="thang">Tháng</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Lương cơ bản</label>
+                  <input type="number" min="0" step="0.01" value={form.luong_co_ban ?? ''} onChange={e => set('luong_co_ban', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>Phụ cấp</label>
+                  <input type="number" min="0" step="0.01" value={form.phu_cap ?? ''} onChange={e => set('phu_cap', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>Phòng ban</label>
+                  <input value={form.phong_ban || ''} onChange={e => set('phong_ban', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>Chức vụ</label>
+                  <input value={form.chuc_vu || ''} onChange={e => set('chuc_vu', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>SĐT</label>
+                  <input value={form.sdt || ''} onChange={e => set('sdt', e.target.value)} />
+                </div>
       Number(row.luong_ngay || row.luong_ngay_cong || 0),
       Number(row.he_so_ot || 1),
       Number(row.phu_cap || 0),

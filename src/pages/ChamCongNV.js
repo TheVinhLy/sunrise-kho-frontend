@@ -60,7 +60,7 @@ export default function ChamCongNV() {
 
   const load = () => {
     setLoading(true);
-    Promise.all([
+    Promise.allSettled([
       getNhanVien(),
       getChamCongNv({
         thang: filters.thang,
@@ -69,7 +69,20 @@ export default function ChamCongNV() {
         nhan_vien_id: filters.nhan_vien_id || undefined,
       }),
     ])
-      .then(([nv, data]) => { setDsNV(nv); setRows(data); setLoading(false); })
+      .then(([nvResult, ccResult]) => {
+        const nv = nvResult.status === 'fulfilled' && Array.isArray(nvResult.value) ? nvResult.value : [];
+        const data = ccResult.status === 'fulfilled' && Array.isArray(ccResult.value) ? ccResult.value : [];
+        setDsNV(nv);
+        setRows(data);
+        if (nvResult.status === 'rejected' || ccResult.status === 'rejected') {
+          const nvErr = nvResult.status === 'rejected' ? nvResult.reason?.message || 'Lỗi tải nhân viên' : '';
+          const ccErr = ccResult.status === 'rejected' ? ccResult.reason?.message || 'Lỗi tải chấm công' : '';
+          setErr([nvErr, ccErr].filter(Boolean).join(' | '));
+        } else {
+          setErr('');
+        }
+        setLoading(false);
+      })
       .catch(e => { setErr(e.message); setLoading(false); });
   };
 
@@ -221,17 +234,13 @@ export default function ChamCongNV() {
   }, { tong_ngay_cong: 0, tong_gio_ot: 0, tong_suat_com: 0 }), [rows]);
 
   const employeeOptions = useMemo(() => dsNV
-    .filter(row => {
-      const status = String(row.trang_thai || '').trim().toLowerCase();
-      // Keep list visible for legacy data where status/is_active may be missing or inconsistent.
-      if (status === 'nghi_viec' || status === 'nghiviec') return false;
-      if (row.is_active === false) return false;
-      return true;
-    })
+    .filter(row => row && row.id !== undefined && row.id !== null)
     .map(row => ({
       id: String(row.id),
       label: [row.ma_nv, row.ho_ten, row.phong_ban || row.chuc_vu || ''].filter(Boolean).join(' - '),
-    })), [dsNV]);
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'vi')),
+  [dsNV]);
 
   const selectedNhanVien = useMemo(
     () => dsNV.find(row => String(row.id) === String(form.nhan_vien_id || '')) || null,
@@ -367,6 +376,7 @@ export default function ChamCongNV() {
                     disabled={modal.mode === 'edit'}
                   >
                     <option value="">-- Chọn nhân viên --</option>
+                    {!employeeOptions.length && <option value="" disabled>Chưa có nhân viên</option>}
                     {employeeOptions.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}
                   </select>
                 </div>
