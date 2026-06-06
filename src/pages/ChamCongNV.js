@@ -9,9 +9,9 @@ const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0
 const BLANK = {
   nhan_vien_id: '',
   ngay_cham_cong: new Date().toISOString().slice(0, 10),
-  so_ngay_cong: 0,
+  so_ngay_cong: 8,
   so_gio_ot: 0,
-  so_suat_com: 0,
+  so_suat_com: 1,
   ghi_chu: '',
 };
 
@@ -60,14 +60,16 @@ export default function ChamCongNV() {
 
   const load = () => {
     setLoading(true);
+    const params = {
+      thang: filters.thang,
+      tu_ngay: filters.tu_ngay,
+      den_ngay: filters.den_ngay,
+    };
+    if (filters.nhan_vien_id) params.nhan_vien_id = filters.nhan_vien_id;
+
     Promise.allSettled([
       getNhanVien(),
-      getChamCongNv({
-        thang: filters.thang,
-        tu_ngay: filters.tu_ngay,
-        den_ngay: filters.den_ngay,
-        nhan_vien_id: filters.nhan_vien_id || undefined,
-      }),
+      getChamCongNv(params),
     ])
       .then(([nvResult, ccResult]) => {
         const nv = nvResult.status === 'fulfilled' && Array.isArray(nvResult.value) ? nvResult.value : [];
