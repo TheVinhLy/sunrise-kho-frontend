@@ -93,7 +93,12 @@ export default function ChamCongNV() {
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
   const openAdd = () => { setForm(BLANK); setErr(''); setModal({ mode: 'add' }); };
   const openEdit = (row) => {
-    setForm({ ...BLANK, ...row, nhan_vien_id: String(row.nhan_vien_id || '') });
+    setForm({
+      ...BLANK,
+      ...row,
+      nhan_vien_id: String(row.nhan_vien_id || ''),
+      ngay_cham_cong: parseDate(row.ngay_cham_cong) || '',
+    });
     setErr('');
     setModal({ mode: 'edit', id: row.id });
   };
