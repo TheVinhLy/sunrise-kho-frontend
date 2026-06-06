@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { addChamCongNv, deleteChamCongNv, getChamCongNv, getNhanVien, importChamCongNv, updateChamCongNv } from '../utils/api';
-import { exportExcel, readExcelFile, readExcelTable } from '../utils/printExcel';
+import { exportExcel, fmtD, readExcelFile, readExcelTable } from '../utils/printExcel';
 
 const monthKey = new Date().toISOString().slice(0, 7);
 const monthStart = `${monthKey}-01`;
@@ -348,7 +348,7 @@ export default function ChamCongNV() {
                 <tbody>
                   {rows.map(row => (
                     <tr key={row.id}>
-                      <td>{row.ngay_cham_cong}</td>
+                      <td>{fmtD(row.ngay_cham_cong)}</td>
                       <td><b>{row.ma_nv}</b></td>
                       <td>{row.ho_ten}</td>
                       <td>{row.phong_ban}</td>
