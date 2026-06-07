@@ -124,7 +124,7 @@ export default function BangLuong() {
       const ctyName = String(congTy?.ten_cong_ty || '').trim();
       const ctyAddress = String(congTy?.dia_chi || '').trim();
       const ctyTaxCode = String(congTy?.ma_so_thue || '').trim();
-      const headerStartRow = 5;
+      const headerStartRow = 4;
       const subHeaderRow = headerStartRow + 1;
       const dataStartRow = subHeaderRow + 1;
       const totalRow = dataStartRow + data.rows.length;
@@ -132,7 +132,6 @@ export default function BangLuong() {
         [ctyName],
         [ctyAddress],
         [`MST: ${ctyTaxCode || ''}`],
-        [],
         [excelTitle],
         ['STT', 'MÃ NV', 'HỌ VÀ TÊN', 'LƯƠNG NGÀY CÔNG', 'LƯƠNG OT/H', 'CƠM', 'NGÀY CÔNG', null, 'OT', null, 'CƠM', null, 'THU NHẬP'],
         [null, null, null, null, null, null, 'NGÀY', 'LƯƠNG', 'GIỜ', 'LƯƠNG', 'CÔNG', 'TIỀN CƠM', null],
@@ -159,7 +158,7 @@ export default function BangLuong() {
         { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
         { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } },
         { s: { r: 2, c: 0 }, e: { r: 2, c: 12 } },
-        { s: { r: 4, c: 0 }, e: { r: 4, c: 12 } },
+        { s: { r: 3, c: 0 }, e: { r: 3, c: 12 } },
         { s: { r: headerStartRow, c: 0 }, e: { r: subHeaderRow, c: 0 } },
         { s: { r: headerStartRow, c: 1 }, e: { r: subHeaderRow, c: 1 } },
         { s: { r: headerStartRow, c: 2 }, e: { r: subHeaderRow, c: 2 } },
@@ -176,7 +175,7 @@ export default function BangLuong() {
         { wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 10 },
         { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 16 },
       ];
-      ws['!rows'] = [{ hpt: 22 }, { hpt: 20 }, { hpt: 20 }, { hpt: 8 }, { hpt: 26 }, { hpt: 24 }, { hpt: 22 }];
+      ws['!rows'] = [{ hpt: 22 }, { hpt: 20 }, { hpt: 20 }, { hpt: 26 }, { hpt: 24 }, { hpt: 22 }];
 
       const range = XLSXStyle.utils.decode_range(ws['!ref']);
       const headerStyle = {
@@ -222,9 +221,12 @@ export default function BangLuong() {
       for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
         for (let colIndex = range.s.c; colIndex <= range.e.c; colIndex += 1) {
           const cellRef = XLSXStyle.utils.encode_cell({ r: rowIndex, c: colIndex });
+          if (!ws[cellRef] && rowIndex >= headerStartRow && rowIndex <= totalRow) {
+            ws[cellRef] = { t: 's', v: '' };
+          }
           if (!ws[cellRef]) continue;
           if (rowIndex <= 2) ws[cellRef].s = companyStyle;
-          else if (rowIndex === 4) ws[cellRef].s = titleStyle;
+          else if (rowIndex === 3) ws[cellRef].s = titleStyle;
           else if (rowIndex === headerStartRow) ws[cellRef].s = headerStyle;
           else if (rowIndex === subHeaderRow) ws[cellRef].s = subHeaderStyle;
           else if (rowIndex === totalRow) ws[cellRef].s = totalStyle;
