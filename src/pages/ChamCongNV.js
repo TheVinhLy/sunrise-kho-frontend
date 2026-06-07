@@ -156,10 +156,10 @@ export default function ChamCongNV() {
   };
 
   const handleTemplate = () => {
-    const headers = ['Mã NV', 'Họ tên', 'Ngày chấm công', 'Số giờ công', 'Số giờ OT', 'Số suất cơm', 'Phòng ban', 'Chức vụ', 'SĐT', 'Lương ngày công', 'Lương OT/H', 'Cơm', 'Ghi chú'];
+    const headers = ['Mã NV', 'Ngày chấm công', 'Số giờ công', 'Số giờ OT', 'Số suất cơm', 'Ghi chú'];
     const exRows = [
-      ['NV001', 'Nguyễn Văn A', `${filters.thang}-01`, 1, 2, 1, 'Sản xuất', 'Công nhân', '0900000000', 0, 0, 0, 'Mẫu import'],
-      ['', '', '', '', '', '', '', '', '', '', '', '', ''],
+      ['NV001', `${filters.thang}-01`, 8, 2, 1, 'Mẫu import'],
+      ['', '', '', '', '', ''],
     ];
     exportExcel(headers, exRows, 'Mau_ChamCongNV');
   };
@@ -206,24 +206,17 @@ export default function ChamCongNV() {
           return acc;
         }, {});
         return {
-          ma_nv: normalized.ma_nv || normalized.ma_nhan_vien || normalized.ma || normalized.employee_code || normalized.code || '',
-          ho_ten: normalized.ten || normalized.ho_ten || normalized.ho_va_ten || normalized.employee_name || normalized.name || '',
+          ma_nv: normalized.ma_nv || normalized.ma_nhan_vien || normalized.ma || normalized.employee_code || normalized.code || normalized.nhan_vien || '',
           ngay_cham_cong: parseExcelDate(normalized.ngay || normalized.ngay_cham_cong || normalized.date),
-          so_ngay_cong: normalized.ngay_cong || normalized.so_ngay_cong || normalized.cong || normalized.gio_cong || 0,
+          so_ngay_cong: normalized.ngay_cong || normalized.so_ngay_cong || normalized.so_gio_cong || normalized.cong || normalized.gio_cong || 0,
           so_gio_ot: normalized.ot || normalized.so_gio_ot || normalized.gio_ot || 0,
           so_suat_com: normalized.com || normalized.so_suat_com || 0,
-          phong_ban: normalized.phong_ban || normalized.department || '',
-          chuc_vu: normalized.chuc_vu || normalized.position || '',
-          sdt: normalized.sdt || normalized.so_dien_thoai || normalized.phone || '',
-          luong_ngay_cong: normalized.luong_ngay_cong || normalized.don_gia_ngay_cong || '',
-          luong_ot_gio: normalized.luong_ot_gio || normalized.luong_ot_h || '',
-          tien_com_ngay: normalized.tien_com_ngay || normalized.luong_com || '',
           ghi_chu: normalized.ghi_chu || normalized.note || '',
         };
-      }).filter(row => row.ma_nv && row.ho_ten && row.ngay_cham_cong);
+      }).filter(row => row.ma_nv && row.ngay_cham_cong);
 
       if (!prepared.length) {
-        alert('Không tìm thấy dòng hợp lệ. Cần có Mã NV, Họ tên và Ngày chấm công.');
+        alert('Không tìm thấy dòng hợp lệ. Cần có Mã NV và Ngày chấm công.');
         setImporting(false);
         return;
       }
