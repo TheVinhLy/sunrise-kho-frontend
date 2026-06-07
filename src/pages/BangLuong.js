@@ -50,9 +50,6 @@ export default function BangLuong() {
   const currentWeek = getCurrentWeekToken();
   const currentWeekBounds = getWeekBounds(currentWeek);
   const [kieuKy, setKieuKy] = useState('week');
-  const [ngay, setNgay] = useState(currentDate);
-  const [tuan, setTuan] = useState(currentWeek);
-  const [thang, setThang] = useState(currentMonth);
   const [tuNgay, setTuNgay] = useState(currentWeekBounds?.start || currentDate);
   const [denNgay, setDenNgay] = useState(currentWeekBounds?.end || currentDate);
   const [nhanVienId, setNhanVienId] = useState('');
@@ -92,21 +89,21 @@ export default function BangLuong() {
     getNhanVien().then(rows => setDsNhanVien(Array.isArray(rows) ? rows : [])).catch(() => setDsNhanVien([]));
   }, []);
 
-  const applyPeriodPreset = (type, value) => {
+  const applyPeriodPreset = (type) => {
     if (type === 'day') {
-      setTuNgay(value);
-      setDenNgay(value);
+      setTuNgay(currentDate);
+      setDenNgay(currentDate);
       return;
     }
     if (type === 'week') {
-      const bounds = getWeekBounds(value);
+      const bounds = getWeekBounds(currentWeek);
       if (bounds) {
         setTuNgay(bounds.start);
         setDenNgay(bounds.end);
       }
       return;
     }
-    const bounds = getMonthBounds(value);
+    const bounds = getMonthBounds(currentMonth);
     if (bounds) {
       setTuNgay(bounds.start);
       setDenNgay(bounds.end);
@@ -217,7 +214,7 @@ export default function BangLuong() {
 
       const wb = XLSXStyle.utils.book_new();
       XLSXStyle.utils.book_append_sheet(wb, ws, 'BangLuong');
-      const kyFile = data.ky_tinh || (kieuKy === 'day' ? ngay : (kieuKy === 'week' ? tuan : thang));
+      const kyFile = data.ky_tinh || `R_${tuNgay || 'na'}_${denNgay || 'na'}`;
       XLSXStyle.writeFile(wb, `BangLuong_${kyFile}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (e) {
       alert(e.message || 'Không xuất được Excel.');
@@ -275,11 +272,11 @@ export default function BangLuong() {
   };
 
   const handleChot = async () => {
-    const kyText = data.label || data.ky_tinh || (kieuKy === 'day' ? ngay : (kieuKy === 'week' ? tuan : thang));
+    const kyText = data.label || data.ky_tinh || `${tuNgay || '-'} đến ${denNgay || '-'}`;
     if (!window.confirm(`Chốt bảng lương kỳ ${kyText}?`)) return;
     try {
       setSaving(true);
-      await chotBangLuong({ ky_tinh: data.ky_tinh || (kieuKy === 'day' ? `D:${ngay}` : (kieuKy === 'week' ? `W:${tuan}` : thang)) });
+      await chotBangLuong({ ky_tinh: data.ky_tinh || `R:${tuNgay}_${denNgay}` });
       setSaving(false);
       load();
       alert('Đã chốt bảng lương.');
@@ -298,39 +295,12 @@ export default function BangLuong() {
             <select value={kieuKy} onChange={e => {
               const next = e.target.value;
               setKieuKy(next);
-              if (next === 'day') applyPeriodPreset('day', ngay);
-              else if (next === 'week') applyPeriodPreset('week', tuan);
-              else applyPeriodPreset('month', thang);
+              applyPeriodPreset(next);
             }}>
               <option value="week">Theo tuần</option>
               <option value="day">Theo ngày</option>
               <option value="month">Theo tháng</option>
             </select>
-            {kieuKy === 'day' ? (
-              <div className="form-group" style={{ margin: 0 }}>
-                <input type="date" value={ngay} onChange={e => {
-                  const value = e.target.value;
-                  setNgay(value);
-                  applyPeriodPreset('day', value);
-                }} />
-              </div>
-            ) : kieuKy === 'week' ? (
-              <div className="form-group" style={{ margin: 0 }}>
-                <input type="week" value={tuan} onChange={e => {
-                  const value = e.target.value;
-                  setTuan(value);
-                  applyPeriodPreset('week', value);
-                }} />
-              </div>
-            ) : (
-              <div className="form-group" style={{ margin: 0 }}>
-                <input type="month" value={thang} onChange={e => {
-                  const value = e.target.value;
-                  setThang(value);
-                  applyPeriodPreset('month', value);
-                }} />
-              </div>
-            )}
             <div className="form-group" style={{ margin: 0 }}>
               <input type="date" value={tuNgay} onChange={e => setTuNgay(e.target.value)} />
             </div>
