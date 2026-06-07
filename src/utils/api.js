@@ -3,7 +3,9 @@ const BASE = process.env.REACT_APP_API_URL || '';
 function getCompanyId() {
   try {
     const u = JSON.parse(localStorage.getItem('sk_user'));
-    return u?.cong_ty?.id || null;
+    const id = u?.cong_ty?.id || u?.cong_ty_id || u?.company_id || null;
+    const n = Number(id);
+    return Number.isFinite(n) && n > 0 ? n : null;
   } catch { return null; }
 }
 

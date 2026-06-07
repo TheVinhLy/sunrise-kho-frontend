@@ -193,8 +193,13 @@ export default function ChamCongNV() {
     if (!file) return;
     try {
       setImporting(true);
-      const workbookRows = await readExcelTable(file, { sheetIndex: 1, headerRow: 7 });
-      const parsedRows = workbookRows.length ? workbookRows : await readExcelFile(file, 1);
+      let parsedRows = await readExcelFile(file, 0);
+      if (!parsedRows.length) {
+        parsedRows = await readExcelTable(file, { sheetIndex: 0, headerRow: 1 });
+      }
+      if (!parsedRows.length) {
+        parsedRows = await readExcelTable(file, { sheetIndex: 0, headerRow: 7 });
+      }
       if (!parsedRows.length) {
         alert('File Excel không có dữ liệu.');
         setImporting(false);
@@ -226,8 +231,9 @@ export default function ChamCongNV() {
         return;
       }
 
-      await importChamCongNv(prepared);
+      const result = await importChamCongNv(prepared);
       setImporting(false);
+      alert(`Import hoàn tất. Đã nhập: ${Number(result?.inserted || 0)} dòng, bỏ qua: ${Number(result?.skipped || 0)} dòng.`);
       load();
     } catch (e) {
       setImporting(false);
