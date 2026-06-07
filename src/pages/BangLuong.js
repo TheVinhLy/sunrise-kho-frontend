@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { chotBangLuong, getBangLuong, getNhanVien } from '../utils/api';
+import { chotBangLuong, getBangLuong, getCongTy, getNhanVien } from '../utils/api';
 import { fmt, loadXlsxStyle, printHtml } from '../utils/printExcel';
 
 function getCurrentWeekToken() {
@@ -44,6 +44,12 @@ function getMonthBounds(monthToken) {
   return { start, end };
 }
 
+function fmtDateVi(value) {
+  const text = String(value || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return text || '-';
+  return `${text.slice(8, 10)}/${text.slice(5, 7)}/${text.slice(0, 4)}`;
+}
+
 export default function BangLuong() {
   const currentDate = new Date().toISOString().slice(0, 10);
   const currentMonth = new Date().toISOString().slice(0, 7);
@@ -56,6 +62,7 @@ export default function BangLuong() {
   const [denNgay, setDenNgay] = useState(currentWeekBounds?.end || currentDate);
   const [nhanVienId, setNhanVienId] = useState('');
   const [dsNhanVien, setDsNhanVien] = useState([]);
+  const [congTy, setCongTy] = useState(null);
   const [data, setData] = useState({ rows: [], totals: { tong_ngay_cong: 0, tong_gio_ot: 0, tong_suat_com: 0, tong_luong: 0 }, tham_so: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -91,6 +98,7 @@ export default function BangLuong() {
 
   useEffect(() => {
     getNhanVien().then(rows => setDsNhanVien(Array.isArray(rows) ? rows : [])).catch(() => setDsNhanVien([]));
+    getCongTy().then(setCongTy).catch(() => setCongTy(null));
   }, []);
 
   const summaryCards = useMemo(() => ([
@@ -101,10 +109,31 @@ export default function BangLuong() {
     { label: 'Tổng lương', value: fmt(data.totals?.tong_luong || 0), color: '' },
   ]), [data]);
 
+  const buildHeaderTitle = () => {
+    const start = data.start || tuNgay;
+    const end = data.end || denNgay;
+    const rangeText = `${fmtDateVi(start)} - ${fmtDateVi(end)}`;
+    const suffix = kieuKy === 'week' ? 'TUẦN' : (kieuKy === 'month' ? 'THÁNG' : 'NGÀY');
+    return `BẢNG LƯƠNG NHÂN CÔNG ${suffix} TỪ ${rangeText}`;
+  };
+
   const handleExcel = async () => {
     try {
       const XLSXStyle = await loadXlsxStyle();
+      const excelTitle = buildHeaderTitle();
+      const ctyName = String(congTy?.ten_cong_ty || '').trim();
+      const ctyAddress = String(congTy?.dia_chi || '').trim();
+      const ctyTaxCode = String(congTy?.ma_so_thue || '').trim();
+      const headerStartRow = 5;
+      const subHeaderRow = headerStartRow + 1;
+      const dataStartRow = subHeaderRow + 1;
+      const totalRow = dataStartRow + data.rows.length;
       const sheetRows = [
+        [ctyName],
+        [ctyAddress],
+        [`MST: ${ctyTaxCode || ''}`],
+        [],
+        [excelTitle],
         ['STT', 'MÃ NV', 'HỌ VÀ TÊN', 'LƯƠNG NGÀY CÔNG', 'LƯƠNG OT/H', 'CƠM', 'NGÀY CÔNG', null, 'OT', null, 'CƠM', null, 'THU NHẬP'],
         [null, null, null, null, null, null, 'NGÀY', 'LƯƠNG', 'GIỜ', 'LƯƠNG', 'CÔNG', 'TIỀN CƠM', null],
         ...data.rows.map((row, index) => [
@@ -127,39 +156,53 @@ export default function BangLuong() {
 
       const ws = XLSXStyle.utils.aoa_to_sheet(sheetRows);
       ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
-        { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
-        { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } },
-        { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
-        { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } },
-        { s: { r: 0, c: 5 }, e: { r: 1, c: 5 } },
-        { s: { r: 0, c: 6 }, e: { r: 0, c: 7 } },
-        { s: { r: 0, c: 8 }, e: { r: 0, c: 9 } },
-        { s: { r: 0, c: 10 }, e: { r: 0, c: 11 } },
-        { s: { r: 0, c: 12 }, e: { r: 1, c: 12 } },
-        { s: { r: data.rows.length + 2, c: 0 }, e: { r: data.rows.length + 2, c: 5 } },
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 12 } },
+        { s: { r: 4, c: 0 }, e: { r: 4, c: 12 } },
+        { s: { r: headerStartRow, c: 0 }, e: { r: subHeaderRow, c: 0 } },
+        { s: { r: headerStartRow, c: 1 }, e: { r: subHeaderRow, c: 1 } },
+        { s: { r: headerStartRow, c: 2 }, e: { r: subHeaderRow, c: 2 } },
+        { s: { r: headerStartRow, c: 3 }, e: { r: subHeaderRow, c: 3 } },
+        { s: { r: headerStartRow, c: 4 }, e: { r: subHeaderRow, c: 4 } },
+        { s: { r: headerStartRow, c: 5 }, e: { r: subHeaderRow, c: 5 } },
+        { s: { r: headerStartRow, c: 6 }, e: { r: headerStartRow, c: 7 } },
+        { s: { r: headerStartRow, c: 8 }, e: { r: headerStartRow, c: 9 } },
+        { s: { r: headerStartRow, c: 10 }, e: { r: headerStartRow, c: 11 } },
+        { s: { r: headerStartRow, c: 12 }, e: { r: subHeaderRow, c: 12 } },
+        { s: { r: totalRow, c: 0 }, e: { r: totalRow, c: 5 } },
       ];
       ws['!cols'] = [
         { wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 10 },
         { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 16 },
       ];
-      ws['!rows'] = [{ hpt: 26 }, { hpt: 22 }];
+      ws['!rows'] = [{ hpt: 22 }, { hpt: 20 }, { hpt: 20 }, { hpt: 8 }, { hpt: 26 }, { hpt: 24 }, { hpt: 22 }];
 
       const range = XLSXStyle.utils.decode_range(ws['!ref']);
       const headerStyle = {
         font: { name: 'Times New Roman', bold: true, sz: 14 },
         alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
         fill: { fgColor: { rgb: 'FFFFFF' } },
+      const companyStyle = {
+        ...bodyStyle,
+        font: { name: 'Times New Roman', bold: true, sz: 13 },
+        alignment: { horizontal: 'left', vertical: 'center' },
+      };
         border: {
           top: { style: 'thin', color: { rgb: '2F7D57' } },
           bottom: { style: 'thin', color: { rgb: '2F7D57' } },
           left: { style: 'thin', color: { rgb: '2F7D57' } },
           right: { style: 'thin', color: { rgb: '2F7D57' } },
-        },
-      };
-      const subHeaderStyle = {
-        ...headerStyle,
+          if (rowIndex <= 2) ws[cellRef].s = companyStyle;
+          else if (rowIndex === 4) ws[cellRef].s = titleStyle;
+          else if (rowIndex === headerStartRow) ws[cellRef].s = headerStyle;
+          else if (rowIndex === subHeaderRow) ws[cellRef].s = subHeaderStyle;
+          else if (rowIndex === totalRow) ws[cellRef].s = totalStyle;
         font: { name: 'Times New Roman', bold: true, sz: 12 },
+      };
+      const titleStyle = {
+        ...headerStyle,
+        font: { name: 'Times New Roman', bold: true, sz: 16 },
       };
       const bodyStyle = {
         font: { name: 'Times New Roman', sz: 12 },
@@ -181,9 +224,10 @@ export default function BangLuong() {
         for (let colIndex = range.s.c; colIndex <= range.e.c; colIndex += 1) {
           const cellRef = XLSXStyle.utils.encode_cell({ r: rowIndex, c: colIndex });
           if (!ws[cellRef]) continue;
-          if (rowIndex === 0) ws[cellRef].s = headerStyle;
-          else if (rowIndex === 1) ws[cellRef].s = subHeaderStyle;
-          else if (rowIndex === data.rows.length + 2) ws[cellRef].s = totalStyle;
+          if (rowIndex === 0) ws[cellRef].s = titleStyle;
+          else if (rowIndex === 1) ws[cellRef].s = headerStyle;
+          else if (rowIndex === 2) ws[cellRef].s = subHeaderStyle;
+          else if (rowIndex === data.rows.length + 3) ws[cellRef].s = totalStyle;
           else {
             const isNum = colIndex === 0 || colIndex >= 3;
             ws[cellRef].s = {
@@ -205,9 +249,10 @@ export default function BangLuong() {
   };
 
   const handlePrint = () => {
-    const kyText = data.label || data.ky_tinh || (kieuKy === 'week'
-      ? `Tuần ${tuan || '-'}`
-      : (kieuKy === 'month' ? `Tháng ${thang || '-'}` : `${tuNgay || '-'} đến ${denNgay || '-'}`));
+    const printTitle = buildHeaderTitle();
+    const ctyName = String(congTy?.ten_cong_ty || '').trim();
+    const ctyAddress = String(congTy?.dia_chi || '').trim();
+    const ctyTaxCode = String(congTy?.ma_so_thue || '').trim();
     const nhanVienText = nhanVienId
       ? (dsNhanVien.find(item => String(item.id) === String(nhanVienId))?.ho_ten || 'Đã chọn')
       : 'Tất cả';
@@ -224,8 +269,10 @@ export default function BangLuong() {
     `).join('');
 
     const content = `
-      <h2>BẢNG LƯƠNG NHÂN VIÊN</h2>
-      <p><b>Khoảng ngày:</b> ${kyText}</p>
+      <p><b>${ctyName || ''}</b></p>
+      <p>${ctyAddress || ''}</p>
+      <p><b>MST:</b> ${ctyTaxCode || ''}</p>
+      <h2>${printTitle}</h2>
       <p><b>Nhân viên:</b> ${nhanVienText}</p>
       <table>
         <thead>
