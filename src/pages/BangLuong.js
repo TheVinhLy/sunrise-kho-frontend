@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { chotBangLuong, getBangLuong } from '../utils/api';
-import { fmt, loadXlsxStyle } from '../utils/printExcel';
+import { chotBangLuong, getBangLuong, getNhanVien } from '../utils/api';
+import { fmt, loadXlsxStyle, printHtml } from '../utils/printExcel';
 
 function getCurrentWeekToken() {
   const now = new Date();
@@ -14,13 +14,49 @@ function getCurrentWeekToken() {
   return `${utcDate.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }
 
+function getWeekBounds(weekToken) {
+  const matched = String(weekToken || '').match(/^(\d{4})-W(\d{2})$/);
+  if (!matched) return null;
+  const year = Number(matched[1]);
+  const week = Number(matched[2]);
+  if (!year || !week) return null;
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Day = (jan4.getUTCDay() + 6) % 7;
+  const week1Start = new Date(jan4);
+  week1Start.setUTCDate(jan4.getUTCDate() - jan4Day);
+  const startDate = new Date(week1Start);
+  startDate.setUTCDate(week1Start.getUTCDate() + (week - 1) * 7);
+  const endDate = new Date(startDate);
+  endDate.setUTCDate(startDate.getUTCDate() + 6);
+  const toKey = (date) => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+  return { start: toKey(startDate), end: toKey(endDate) };
+}
+
+function getMonthBounds(monthToken) {
+  const text = String(monthToken || '');
+  if (!/^\d{4}-\d{2}$/.test(text)) return null;
+  const [yearText, monthText] = text.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const start = `${yearText}-${monthText}-01`;
+  const endDay = new Date(year, month, 0).getDate();
+  const end = `${yearText}-${monthText}-${String(endDay).padStart(2, '0')}`;
+  return { start, end };
+}
+
 export default function BangLuong() {
   const currentDate = new Date().toISOString().slice(0, 10);
   const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentWeek = getCurrentWeekToken();
+  const currentWeekBounds = getWeekBounds(currentWeek);
   const [kieuKy, setKieuKy] = useState('week');
   const [ngay, setNgay] = useState(currentDate);
-  const [tuan, setTuan] = useState(getCurrentWeekToken());
+  const [tuan, setTuan] = useState(currentWeek);
   const [thang, setThang] = useState(currentMonth);
+  const [tuNgay, setTuNgay] = useState(currentWeekBounds?.start || currentDate);
+  const [denNgay, setDenNgay] = useState(currentWeekBounds?.end || currentDate);
+  const [nhanVienId, setNhanVienId] = useState('');
+  const [dsNhanVien, setDsNhanVien] = useState([]);
   const [data, setData] = useState({ rows: [], totals: { tong_ngay_cong: 0, tong_gio_ot: 0, tong_suat_com: 0, tong_luong: 0 }, tham_so: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,13 +79,39 @@ export default function BangLuong() {
 
   const load = () => {
     setLoading(true);
-    const params = kieuKy === 'day' ? { ngay } : (kieuKy === 'week' ? { tuan } : { thang });
+    const params = { tu_ngay: tuNgay, den_ngay: denNgay };
+    if (nhanVienId) params.nhan_vien_id = nhanVienId;
     getBangLuong(params)
       .then(result => { setData(result); setLoading(false); })
       .catch(e => { setErr(e.message); setLoading(false); });
   };
 
-  useEffect(load, [kieuKy, ngay, tuan, thang]);
+  useEffect(load, [tuNgay, denNgay, nhanVienId]);
+
+  useEffect(() => {
+    getNhanVien().then(rows => setDsNhanVien(Array.isArray(rows) ? rows : [])).catch(() => setDsNhanVien([]));
+  }, []);
+
+  const applyPeriodPreset = (type, value) => {
+    if (type === 'day') {
+      setTuNgay(value);
+      setDenNgay(value);
+      return;
+    }
+    if (type === 'week') {
+      const bounds = getWeekBounds(value);
+      if (bounds) {
+        setTuNgay(bounds.start);
+        setDenNgay(bounds.end);
+      }
+      return;
+    }
+    const bounds = getMonthBounds(value);
+    if (bounds) {
+      setTuNgay(bounds.start);
+      setDenNgay(bounds.end);
+    }
+  };
 
   const summaryCards = useMemo(() => ([
     { label: 'Nhân viên', value: data.rows.length, color: 'blue' },
@@ -162,6 +224,56 @@ export default function BangLuong() {
     }
   };
 
+  const handlePrint = () => {
+    const kyText = `${tuNgay || '-'} đến ${denNgay || '-'}`;
+    const nhanVienText = nhanVienId
+      ? (dsNhanVien.find(item => String(item.id) === String(nhanVienId))?.ho_ten || 'Đã chọn')
+      : 'Tất cả';
+    const rowsHtml = data.rows.map((row, index) => `
+      <tr>
+        <td class="center">${index + 1}</td>
+        <td>${row.ma_nv || ''}</td>
+        <td>${row.ho_ten || ''}</td>
+        <td class="num">${fmt(row.tong_ngay_cong)}</td>
+        <td class="num">${fmt(row.tong_gio_ot)}</td>
+        <td class="num">${fmt(row.tong_suat_com)}</td>
+        <td class="num">${fmt(row.tong_luong)}</td>
+      </tr>
+    `).join('');
+
+    const content = `
+      <h2>BẢNG LƯƠNG NHÂN VIÊN</h2>
+      <p><b>Khoảng ngày:</b> ${kyText}</p>
+      <p><b>Nhân viên:</b> ${nhanVienText}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Mã NV</th>
+            <th>Họ tên</th>
+            <th>Ngày công</th>
+            <th>Giờ OT</th>
+            <th>Suất cơm</th>
+            <th>Thu nhập</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml || '<tr><td colspan="7" class="center">Không có dữ liệu</td></tr>'}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="center"><b>TỔNG</b></td>
+            <td class="num"><b>${fmt(data.totals?.tong_ngay_cong)}</b></td>
+            <td class="num"><b>${fmt(data.totals?.tong_gio_ot)}</b></td>
+            <td class="num"><b>${fmt(data.totals?.tong_suat_com)}</b></td>
+            <td class="num"><b>${fmt(data.totals?.tong_luong)}</b></td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+    printHtml(content, 'In bảng lương');
+  };
+
   const handleChot = async () => {
     const kyText = data.label || data.ky_tinh || (kieuKy === 'day' ? ngay : (kieuKy === 'week' ? tuan : thang));
     if (!window.confirm(`Chốt bảng lương kỳ ${kyText}?`)) return;
@@ -183,25 +295,58 @@ export default function BangLuong() {
         <div className="card-header">
           <h2>📑 Bảng lương theo kỳ</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <select value={kieuKy} onChange={e => setKieuKy(e.target.value)}>
+            <select value={kieuKy} onChange={e => {
+              const next = e.target.value;
+              setKieuKy(next);
+              if (next === 'day') applyPeriodPreset('day', ngay);
+              else if (next === 'week') applyPeriodPreset('week', tuan);
+              else applyPeriodPreset('month', thang);
+            }}>
               <option value="week">Theo tuần</option>
               <option value="day">Theo ngày</option>
               <option value="month">Theo tháng</option>
             </select>
             {kieuKy === 'day' ? (
               <div className="form-group" style={{ margin: 0 }}>
-                <input type="date" value={ngay} onChange={e => setNgay(e.target.value)} />
+                <input type="date" value={ngay} onChange={e => {
+                  const value = e.target.value;
+                  setNgay(value);
+                  applyPeriodPreset('day', value);
+                }} />
               </div>
             ) : kieuKy === 'week' ? (
               <div className="form-group" style={{ margin: 0 }}>
-                <input type="week" value={tuan} onChange={e => setTuan(e.target.value)} />
+                <input type="week" value={tuan} onChange={e => {
+                  const value = e.target.value;
+                  setTuan(value);
+                  applyPeriodPreset('week', value);
+                }} />
               </div>
             ) : (
               <div className="form-group" style={{ margin: 0 }}>
-                <input type="month" value={thang} onChange={e => setThang(e.target.value)} />
+                <input type="month" value={thang} onChange={e => {
+                  const value = e.target.value;
+                  setThang(value);
+                  applyPeriodPreset('month', value);
+                }} />
               </div>
             )}
+            <div className="form-group" style={{ margin: 0 }}>
+              <input type="date" value={tuNgay} onChange={e => setTuNgay(e.target.value)} />
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <input type="date" value={denNgay} onChange={e => setDenNgay(e.target.value)} />
+            </div>
+            <div className="form-group" style={{ margin: 0, minWidth: 220 }}>
+              <select value={nhanVienId} onChange={e => setNhanVienId(e.target.value)}>
+                <option value="">Tất cả nhân viên</option>
+                {dsNhanVien.map(row => (
+                  <option key={row.id} value={row.id}>{[row.ma_nv, row.ho_ten].filter(Boolean).join(' - ')}</option>
+                ))}
+              </select>
+            </div>
             <button className="btn btn-ghost" onClick={load}>🔄 Tính lại</button>
+            <button className="btn btn-ghost" onClick={handlePrint}>🖨️ In</button>
             <button className="btn btn-ghost" onClick={handleExcel}>📥 Xuất Excel</button>
             <button className="btn btn-primary" onClick={handleChot} disabled={saving}>{saving ? 'Đang chốt...' : '✅ Chốt lương'}</button>
           </div>
@@ -211,6 +356,17 @@ export default function BangLuong() {
             <span className="badge" style={{ background: '#eef6f2', color: '#1b3a2f' }}>
               Kỳ tính: {data.label || data.ky_tinh || '-'}
             </span>
+            <span className="badge" style={{ background: '#eef6f2', color: '#1b3a2f' }}>
+              Từ ngày: {tuNgay || '-'}
+            </span>
+            <span className="badge" style={{ background: '#eef6f2', color: '#1b3a2f' }}>
+              Đến ngày: {denNgay || '-'}
+            </span>
+            {nhanVienId ? (
+              <span className="badge" style={{ background: '#eef6f2', color: '#1b3a2f' }}>
+                NV: {dsNhanVien.find(item => String(item.id) === String(nhanVienId))?.ho_ten || nhanVienId}
+              </span>
+            ) : null}
           </div>
 
           <div className="stats-grid">
