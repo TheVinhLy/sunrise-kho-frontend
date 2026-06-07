@@ -183,21 +183,15 @@ export default function BangLuong() {
         font: { name: 'Times New Roman', bold: true, sz: 14 },
         alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
         fill: { fgColor: { rgb: 'FFFFFF' } },
-      const companyStyle = {
-        ...bodyStyle,
-        font: { name: 'Times New Roman', bold: true, sz: 13 },
-        alignment: { horizontal: 'left', vertical: 'center' },
-      };
         border: {
           top: { style: 'thin', color: { rgb: '2F7D57' } },
           bottom: { style: 'thin', color: { rgb: '2F7D57' } },
           left: { style: 'thin', color: { rgb: '2F7D57' } },
           right: { style: 'thin', color: { rgb: '2F7D57' } },
-          if (rowIndex <= 2) ws[cellRef].s = companyStyle;
-          else if (rowIndex === 4) ws[cellRef].s = titleStyle;
-          else if (rowIndex === headerStartRow) ws[cellRef].s = headerStyle;
-          else if (rowIndex === subHeaderRow) ws[cellRef].s = subHeaderStyle;
-          else if (rowIndex === totalRow) ws[cellRef].s = totalStyle;
+        },
+      };
+      const subHeaderStyle = {
+        ...headerStyle,
         font: { name: 'Times New Roman', bold: true, sz: 12 },
       };
       const titleStyle = {
@@ -219,15 +213,21 @@ export default function BangLuong() {
         font: { name: 'Times New Roman', bold: true, sz: 12 },
         fill: { fgColor: { rgb: 'EEF6F2' } },
       };
+      const companyStyle = {
+        ...bodyStyle,
+        font: { name: 'Times New Roman', bold: true, sz: 13 },
+        alignment: { horizontal: 'left', vertical: 'center' },
+      };
 
       for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
         for (let colIndex = range.s.c; colIndex <= range.e.c; colIndex += 1) {
           const cellRef = XLSXStyle.utils.encode_cell({ r: rowIndex, c: colIndex });
           if (!ws[cellRef]) continue;
-          if (rowIndex === 0) ws[cellRef].s = titleStyle;
-          else if (rowIndex === 1) ws[cellRef].s = headerStyle;
-          else if (rowIndex === 2) ws[cellRef].s = subHeaderStyle;
-          else if (rowIndex === data.rows.length + 3) ws[cellRef].s = totalStyle;
+          if (rowIndex <= 2) ws[cellRef].s = companyStyle;
+          else if (rowIndex === 4) ws[cellRef].s = titleStyle;
+          else if (rowIndex === headerStartRow) ws[cellRef].s = headerStyle;
+          else if (rowIndex === subHeaderRow) ws[cellRef].s = subHeaderStyle;
+          else if (rowIndex === totalRow) ws[cellRef].s = totalStyle;
           else {
             const isNum = colIndex === 0 || colIndex >= 3;
             ws[cellRef].s = {
