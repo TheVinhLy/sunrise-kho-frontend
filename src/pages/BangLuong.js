@@ -201,10 +201,10 @@ export default function BangLuong() {
         font: { name: 'Times New Roman', sz: 12 },
         alignment: { vertical: 'center' },
         border: {
-          top: { style: 'thin', color: { rgb: 'D7E6DD' } },
-          bottom: { style: 'thin', color: { rgb: 'D7E6DD' } },
-          left: { style: 'thin', color: { rgb: 'D7E6DD' } },
-          right: { style: 'thin', color: { rgb: 'D7E6DD' } },
+          top: { style: 'thin', color: { rgb: '2F7D57' } },
+          bottom: { style: 'thin', color: { rgb: '2F7D57' } },
+          left: { style: 'thin', color: { rgb: '2F7D57' } },
+          right: { style: 'thin', color: { rgb: '2F7D57' } },
         },
       };
       const totalStyle = {
