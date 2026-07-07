@@ -90,27 +90,77 @@ export default function BangLuongChiTiet() {
   const handleExcel = async () => {
     try {
       const XLSXStyle = await loadXlsxStyle();
-      const rows = [
+
+      // Group rows by employee (ma_nv + ho_ten)
+      const groups = {};
+      for (const r of (data.rows || [])) {
+        const key = `${r.ma_nv || ''}||${r.ho_ten || ''}`;
+        if (!groups[key]) groups[key] = { ma_nv: r.ma_nv || '', ho_ten: r.ho_ten || '', rows: [], totals: { gio: 0, thanh_tien_cong: 0, so_gio_ot: 0, thanh_tien_ot: 0, suat: 0, thanh_tien_com: 0 } };
+        groups[key].rows.push(r);
+        groups[key].totals.gio += Number(r.gio || 0);
+        groups[key].totals.thanh_tien_cong += Number(r.thanh_tien_cong || 0);
+        groups[key].totals.so_gio_ot += Number(r.so_gio_ot || 0);
+        groups[key].totals.thanh_tien_ot += Number(r.thanh_tien_ot || 0);
+        groups[key].totals.suat += Number(r.suat || 0);
+        groups[key].totals.thanh_tien_com += Number(r.thanh_tien_com || 0);
+      }
+
+      const header = [
         ['BẢNG LƯƠNG CHI TIẾT'],
         [`Công ty: ${congTy?.ten_cong_ty || ''}`],
         [`Kho: ${congTy?.ten_kho || ''}`],
         [`Kỳ: ${data.label || data.ky_tinh || '-'}`],
-        ['Ngày', 'Mã NV', 'Họ tên', 'Giờ công', 'Tiền công', 'Giờ OT', 'Tiền OT', 'Suất cơm', 'Tiền cơm'],
-        ...data.rows.map(row => [
-          row.ngay_cham_cong,
-          row.ma_nv,
-          row.ho_ten,
-          Number(row.gio || 0),
-          Number(row.thanh_tien_cong || 0),
-          Number(row.so_gio_ot || 0),
-          Number(row.thanh_tien_ot || 0),
-          Number(row.suat || 0),
-          Number(row.thanh_tien_com || 0),
-        ]),
-        ['TỔNG', '', '', Number(data.totals?.gio || 0), Number(data.totals?.thanh_tien_cong || 0), Number(data.totals?.so_gio_ot || 0), Number(data.totals?.thanh_tien_ot || 0), Number(data.totals?.suat || 0), Number(data.totals?.thanh_tien_com || 0)],
+        [],
       ];
-      const ws = XLSXStyle.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 24 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 16 }];
+
+      const rowsOut = [];
+      // push header lines
+      header.forEach(r => rowsOut.push(r));
+
+      // For each employee group, add group header, column headers, rows, subtotal
+      for (const key of Object.keys(groups)) {
+        const g = groups[key];
+        // employee header
+        rowsOut.push(['', g.ma_nv, g.ho_ten]);
+        // column header
+        rowsOut.push(['Ngày', 'Mã NV', 'Họ tên', 'Giờ công', 'Tiền công', 'Giờ OT', 'Tiền OT', 'Suất cơm', 'Tiền cơm', 'Ghi chú']);
+        // rows sorted by date
+        g.rows.sort((a,b)=> (a.ngay_cham_cong||'') < (b.ngay_cham_cong||'') ? 1 : -1).reverse();
+        for (const r of g.rows) {
+          // ensure date in YYYY-MM-DD
+          const ngay = r.ngay_cham_cong ? String(r.ngay_cham_cong).slice(0,10) : '';
+          rowsOut.push([ngay, r.ma_nv, r.ho_ten, Number(r.gio||0), Number(r.thanh_tien_cong||0), Number(r.so_gio_ot||0), Number(r.thanh_tien_ot||0), Number(r.suat||0), Number(r.thanh_tien_com||0), r.ghi_chu || '']);
+        }
+        // subtotal for this employee
+        rowsOut.push(['TỔNG', '', '', g.totals.gio, g.totals.thanh_tien_cong, g.totals.so_gio_ot, g.totals.thanh_tien_ot, g.totals.suat, g.totals.thanh_tien_com, '']);
+        // blank row between groups
+        rowsOut.push([]);
+      }
+
+      // overall total
+      rowsOut.push(['TỔNG CỘNG', '', '', Number(data.totals?.gio || 0), Number(data.totals?.thanh_tien_cong || 0), Number(data.totals?.so_gio_ot || 0), Number(data.totals?.thanh_tien_ot || 0), Number(data.totals?.suat || 0), Number(data.totals?.thanh_tien_com || 0), '']);
+
+      const ws = XLSXStyle.utils.aoa_to_sheet(rowsOut);
+      ws['!cols'] = [ {wch:12}, {wch:12}, {wch:24}, {wch:10}, {wch:14}, {wch:10}, {wch:14}, {wch:10}, {wch:14}, {wch:18} ];
+
+      // simple styling
+      const range = XLSXStyle.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cellRef = XLSXStyle.utils.encode_cell({r:R,c:C});
+          const cell = ws[cellRef];
+          if (!cell) continue;
+          // header rows style
+          if (R <= 3) {
+            cell.s = { font:{bold:true, sz:12}, alignment:{horizontal:'left'} };
+          } else if (ws[cellRef].v === 'TỔNG' || ws[cellRef].v === 'TỔNG CỘNG') {
+            cell.s = { font:{bold:true}, fill:{fgColor:{rgb:'EEF6F2'}}, alignment:{horizontal:'right'} };
+          } else if (R > 3 && typeof cell.v === 'number') {
+            cell.s = { alignment:{horizontal:'right'} };
+          }
+        }
+      }
+
       const wb = XLSXStyle.utils.book_new();
       XLSXStyle.utils.book_append_sheet(wb, ws, 'BangLuongChiTiet');
       XLSXStyle.writeFile(wb, `BangLuongChiTiet_${new Date().toISOString().slice(0, 10)}.xlsx`);
