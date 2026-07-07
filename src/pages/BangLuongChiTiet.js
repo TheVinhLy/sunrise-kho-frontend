@@ -57,12 +57,16 @@ export default function BangLuongChiTiet() {
 
   const load = () => {
     setLoading(true);
+    setErr('');
     const params = kieuKy === 'week'
       ? { tuan }
       : (kieuKy === 'month' ? { thang } : { tu_ngay: tuNgay, den_ngay: denNgay });
     if (nhanVienId) params.nhan_vien_id = nhanVienId;
     getBangLuongChiTiet(params)
-      .then(result => { setData(result); setLoading(false); })
+      .then(result => {
+        setData(result || { rows: [], totals: { gio: 0, thanh_tien_cong: 0, so_gio_ot: 0, thanh_tien_ot: 0, suat: 0, thanh_tien_com: 0 } });
+        setLoading(false);
+      })
       .catch(e => { setErr(e.message); setLoading(false); });
   };
 
