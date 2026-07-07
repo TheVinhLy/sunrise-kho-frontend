@@ -14,6 +14,7 @@ import NhanVien      from './pages/NhanVien';
 import ChamCongNV    from './pages/ChamCongNV';
 import LuongThamSo   from './pages/LuongThamSo';
 import BangLuong     from './pages/BangLuong';
+import BangLuongChiTiet from './pages/BangLuongChiTiet';
 import QuanLyUser    from './pages/QuanLyUser';
 import QuanLyCongTy  from './pages/QuanLyCongTy';
 import QuanLyNCC     from './pages/QuanLyNCC';
@@ -31,6 +32,7 @@ const ALL_NAV = [
   { to:'/ql-nhan-vien', icon:'👤', label:'Nhân viên',         key:'nhan-vien' },
   { to:'/cham-cong-nv', icon:'🕒', label:'Chấm công NV',      key:'cham-cong-nv' },
   { to:'/bang-luong',   icon:'📑', label:'Bảng lương',        key:'bang-luong' },
+  { to:'/bang-luong-chi-tiet', icon:'📋', label:'Bảng lương chi tiết', key:'bang-luong-chi-tiet' },
   { to:'/luong-tham-so', icon:'💰', label:'Tham số lương',    key:'luong-tham-so' },
   { to:'/backup',       icon:'💾', label:'Backup DB',          key:'__admin__' },
   { to:'/ql-cong-ty',   icon:'🏭', label:'Quản lý công ty',   key:'__admin__' },
@@ -245,6 +247,7 @@ export default function App() {
               <Route path="/cham-cong-nv" element={<ProtectedRoute menuKey="cham-cong-nv" user={user}><ChamCongNV/></ProtectedRoute>}/>
               <Route path="/luong-tham-so" element={<ProtectedRoute menuKey="luong-tham-so" user={user}><LuongThamSo/></ProtectedRoute>}/>
               <Route path="/bang-luong"   element={<ProtectedRoute menuKey="bang-luong" user={user}><BangLuong/></ProtectedRoute>}/>
+              <Route path="/bang-luong-chi-tiet" element={<ProtectedRoute menuKey="bang-luong-chi-tiet" user={user}><BangLuongChiTiet/></ProtectedRoute>}/>
               <Route path="/backup"       element={<ProtectedRoute menuKey="__admin__" user={user}><Backup/></ProtectedRoute>}/>
               <Route path="/ql-cong-ty"   element={<ProtectedRoute menuKey="__admin__" user={user}><QuanLyCongTy/></ProtectedRoute>}/>
               <Route path="/ql-nha-cc"    element={<ProtectedRoute menuKey="nha-cc"    user={user}><QuanLyNCC/></ProtectedRoute>}/>

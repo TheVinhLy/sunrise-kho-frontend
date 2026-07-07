@@ -73,6 +73,7 @@ export const importChamCongNv = (rows)      => api('/api/cham-cong-nv/import', {
 
 // Bảng lương
 export const getBangLuong  = (params={}) => { const q = new URLSearchParams(params).toString(); return api('/api/bang-luong'+(q?'?'+q:'')); };
+export const getBangLuongChiTiet = (params={}) => { const q = new URLSearchParams(params).toString(); return api('/api/bang-luong-chi-tiet'+(q?'?'+q:'')); };
 export const chotBangLuong = (data)      => api('/api/bang-luong/chot', { method: 'POST', body: data });
 
 // Danh mục

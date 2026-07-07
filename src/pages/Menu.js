@@ -12,6 +12,7 @@ const MODULES = [
   { to: '/ql-nhan-vien', key: 'nhan-vien', icon: '👤', label: 'Nhân viên\n& hồ sơ', color: '#e8f5e9', border: '#1b5e20', desc: 'Quản lý danh sách nhân viên' },
   { to: '/cham-cong-nv', key: 'cham-cong-nv', icon: '🕒', label: 'Chấm công\nNhân viên', color: '#ede7f6', border: '#4527a0', desc: 'Nhập và import chấm công từ Excel' },
   { to: '/bang-luong', key: 'bang-luong', icon: '📑', label: 'Bảng lương\nTháng', color: '#e3f2fd', border: '#0d47a1', desc: 'Tổng hợp lương theo tháng và chốt lương' },
+  { to: '/bang-luong-chi-tiet', key: 'bang-luong-chi-tiet', icon: '📋', label: 'Bảng lương\nChi tiết', color: '#e8f5e9', border: '#2e7d32', desc: 'Xem chi tiết công, OT, cơm và xuất Excel' },
   { to: '/luong-tham-so', key: 'luong-tham-so', icon: '💰', label: 'Tham số\nLương', color: '#fff8e1', border: '#b26a00', desc: 'Thiết lập lương ngày công, OT/H, cơm' },
 ];
 
