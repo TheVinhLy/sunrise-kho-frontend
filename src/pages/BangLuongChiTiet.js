@@ -113,32 +113,40 @@ export default function BangLuongChiTiet() {
         [],
       ];
 
+      const colHeader = ['Ngày', 'Mã NV', 'Họ tên', 'Giờ công', 'Tiền công', 'Giờ OT', 'Tiền OT', 'Suất cơm', 'Tiền cơm', 'TỔNG', 'Ghi chú'];
+
       const rowsOut = [];
       // push header lines
       header.forEach(r => rowsOut.push(r));
+      // push single column header
+      rowsOut.push(colHeader);
 
-      // For each employee group, add group header, column headers, rows, subtotal
+      let overallTotal = 0;
+
+      // For each employee group, add employee label, rows, subtotal
       for (const key of Object.keys(groups)) {
         const g = groups[key];
-        // employee header
+        // employee header (one row containing id + name)
         rowsOut.push(['', g.ma_nv, g.ho_ten]);
-        // column header
-        rowsOut.push(['Ngày', 'Mã NV', 'Họ tên', 'Giờ công', 'Tiền công', 'Giờ OT', 'Tiền OT', 'Suất cơm', 'Tiền cơm', 'Ghi chú']);
-        // rows sorted by date
-        g.rows.sort((a,b)=> (a.ngay_cham_cong||'') < (b.ngay_cham_cong||'') ? 1 : -1).reverse();
+
+        // rows sorted by date ascending
+        g.rows.sort((a,b)=> String(a.ngay_cham_cong||'').localeCompare(String(b.ngay_cham_cong||'')));
         for (const r of g.rows) {
-          // ensure date in YYYY-MM-DD
           const ngay = r.ngay_cham_cong ? String(r.ngay_cham_cong).slice(0,10) : '';
-          rowsOut.push([ngay, r.ma_nv, r.ho_ten, Number(r.gio||0), Number(r.thanh_tien_cong||0), Number(r.so_gio_ot||0), Number(r.thanh_tien_ot||0), Number(r.suat||0), Number(r.thanh_tien_com||0), r.ghi_chu || '']);
+          const rowTotal = Number(r.thanh_tien_cong || 0) + Number(r.thanh_tien_ot || 0) + Number(r.thanh_tien_com || 0);
+          rowsOut.push([ngay, r.ma_nv, r.ho_ten, Number(r.gio||0), Number(r.thanh_tien_cong||0), Number(r.so_gio_ot||0), Number(r.thanh_tien_ot||0), Number(r.suat||0), Number(r.thanh_tien_com||0), rowTotal, r.ghi_chu || '']);
         }
-        // subtotal for this employee
-        rowsOut.push(['TỔNG', '', '', g.totals.gio, g.totals.thanh_tien_cong, g.totals.so_gio_ot, g.totals.thanh_tien_ot, g.totals.suat, g.totals.thanh_tien_com, '']);
+
+        // subtotal for this employee: sum of three thành tiền columns + 25000
+        const subtotal = (g.totals.thanh_tien_cong || 0) + (g.totals.thanh_tien_ot || 0) + (g.totals.thanh_tien_com || 0) + 25000;
+        overallTotal += subtotal;
+        rowsOut.push(['TỔNG', '', '', g.totals.gio, g.totals.thanh_tien_cong, g.totals.so_gio_ot, g.totals.thanh_tien_ot, g.totals.suat, g.totals.thanh_tien_com, subtotal, '']);
         // blank row between groups
         rowsOut.push([]);
       }
 
-      // overall total
-      rowsOut.push(['TỔNG CỘNG', '', '', Number(data.totals?.gio || 0), Number(data.totals?.thanh_tien_cong || 0), Number(data.totals?.so_gio_ot || 0), Number(data.totals?.thanh_tien_ot || 0), Number(data.totals?.suat || 0), Number(data.totals?.thanh_tien_com || 0), '']);
+      // overall total row uses overallTotal (sum of per-employee subtotal)
+      rowsOut.push(['TỔNG CỘNG', '', '', '', '', '', '', '', '', overallTotal, '']);
 
       const ws = XLSXStyle.utils.aoa_to_sheet(rowsOut);
       ws['!cols'] = [ {wch:12}, {wch:12}, {wch:24}, {wch:10}, {wch:14}, {wch:10}, {wch:14}, {wch:10}, {wch:14}, {wch:18} ];
