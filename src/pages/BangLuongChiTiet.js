@@ -77,6 +77,34 @@ export default function BangLuongChiTiet() {
     getCongTy().then(setCongTy).catch(() => setCongTy(null));
   }, []);
 
+  const groupedRows = useMemo(() => {
+    const groups = {};
+    for (const r of (data.rows || [])) {
+      const key = `${r.ma_nv || ''}||${r.ho_ten || ''}`;
+      if (!groups[key]) {
+        groups[key] = {
+          ma_nv: r.ma_nv || '',
+          ho_ten: r.ho_ten || '',
+          rows: [],
+          totals: { gio: 0, thanh_tien_cong: 0, so_gio_ot: 0, thanh_tien_ot: 0, suat: 0, thanh_tien_com: 0 },
+        };
+      }
+      groups[key].rows.push(r);
+      groups[key].totals.gio += Number(r.gio || 0);
+      groups[key].totals.thanh_tien_cong += Number(r.thanh_tien_cong || 0);
+      groups[key].totals.so_gio_ot += Number(r.so_gio_ot || 0);
+      groups[key].totals.thanh_tien_ot += Number(r.thanh_tien_ot || 0);
+      groups[key].totals.suat += Number(r.suat || 0);
+      groups[key].totals.thanh_tien_com += Number(r.thanh_tien_com || 0);
+    }
+    return Object.values(groups).map(g => ({
+      ...g,
+      rows: g.rows.sort((a,b) => String(a.ngay_cham_cong||'').localeCompare(String(b.ngay_cham_cong||''))),
+      thanhTien: Number(g.totals.thanh_tien_cong || 0) + Number(g.totals.thanh_tien_ot || 0) + Number(g.totals.thanh_tien_com || 0) + 25000,
+      totalAllowance: 25000,
+    }));
+  }, [data.rows]);
+
   const summaryCards = useMemo(() => ([
     { label: 'Số dòng', value: data.rows.length, color: 'blue' },
     { label: 'Giờ công', value: fmt(data.totals?.gio || 0), color: '' },
@@ -87,23 +115,11 @@ export default function BangLuongChiTiet() {
     { label: 'Tiền cơm', value: fmt(data.totals?.thanh_tien_com || 0), color: '' },
   ]), [data]);
 
+  const overallTotal = useMemo(() => groupedRows.reduce((sum, g) => sum + g.thanhTien, 0), [groupedRows]);
+
   const handleExcel = async () => {
     try {
       const XLSXStyle = await loadXlsxStyle();
-
-      // Group rows by employee (ma_nv + ho_ten)
-      const groups = {};
-      for (const r of (data.rows || [])) {
-        const key = `${r.ma_nv || ''}||${r.ho_ten || ''}`;
-        if (!groups[key]) groups[key] = { ma_nv: r.ma_nv || '', ho_ten: r.ho_ten || '', rows: [], totals: { gio: 0, thanh_tien_cong: 0, so_gio_ot: 0, thanh_tien_ot: 0, suat: 0, thanh_tien_com: 0 } };
-        groups[key].rows.push(r);
-        groups[key].totals.gio += Number(r.gio || 0);
-        groups[key].totals.thanh_tien_cong += Number(r.thanh_tien_cong || 0);
-        groups[key].totals.so_gio_ot += Number(r.so_gio_ot || 0);
-        groups[key].totals.thanh_tien_ot += Number(r.thanh_tien_ot || 0);
-        groups[key].totals.suat += Number(r.suat || 0);
-        groups[key].totals.thanh_tien_com += Number(r.thanh_tien_com || 0);
-      }
 
       const header = [
         ['BẢNG LƯƠNG CHI TIẾT'],
@@ -113,7 +129,7 @@ export default function BangLuongChiTiet() {
         [],
       ];
 
-      const colHeader = ['Ngày', 'Mã NV', 'Họ tên', 'Giờ công', 'Tiền công', 'Giờ OT', 'Tiền OT', 'Suất cơm', 'Tiền cơm', 'TỔNG', 'Ghi chú'];
+      const colHeader = ['STT', 'Ngày', 'Mã NV', 'Họ tên', 'Giờ công', 'Tiền công', 'Giờ OT', 'Tiền OT', 'Suất cơm', 'Tiền cơm', 'Ghi chú'];
 
       const rowsOut = [];
       // push header lines
@@ -123,33 +139,48 @@ export default function BangLuongChiTiet() {
 
       let overallTotal = 0;
 
-      // For each employee group, add employee label, rows, subtotal
-      for (const key of Object.keys(groups)) {
-        const g = groups[key];
-        // employee header (one row containing id + name)
-        rowsOut.push(['', g.ma_nv, g.ho_ten]);
-
-        // rows sorted by date ascending
-        g.rows.sort((a,b)=> String(a.ngay_cham_cong||'').localeCompare(String(b.ngay_cham_cong||'')));
-        for (const r of g.rows) {
+      // For each employee group, add rows and subtotal
+      for (const g of groupedRows) {
+        g.rows.forEach((r, rowIndex) => {
           const ngay = r.ngay_cham_cong ? String(r.ngay_cham_cong).slice(0,10) : '';
-          const rowTotal = Number(r.thanh_tien_cong || 0) + Number(r.thanh_tien_ot || 0) + Number(r.thanh_tien_com || 0);
-          rowsOut.push([ngay, r.ma_nv, r.ho_ten, Number(r.gio||0), Number(r.thanh_tien_cong||0), Number(r.so_gio_ot||0), Number(r.thanh_tien_ot||0), Number(r.suat||0), Number(r.thanh_tien_com||0), rowTotal, r.ghi_chu || '']);
-        }
+          rowsOut.push([
+            rowIndex + 1,
+            ngay,
+            r.ma_nv,
+            r.ho_ten,
+            Number(r.gio || 0),
+            Number(r.thanh_tien_cong || 0),
+            Number(r.so_gio_ot || 0),
+            Number(r.thanh_tien_ot || 0),
+            Number(r.suat || 0),
+            Number(r.thanh_tien_com || 0),
+            r.ghi_chu || '',
+          ]);
+        });
 
-        // subtotal for this employee: sum of three thành tiền columns + 25000
-        const subtotal = (g.totals.thanh_tien_cong || 0) + (g.totals.thanh_tien_ot || 0) + (g.totals.thanh_tien_com || 0) + 25000;
-        overallTotal += subtotal;
-        rowsOut.push(['TỔNG', '', '', g.totals.gio, g.totals.thanh_tien_cong, g.totals.so_gio_ot, g.totals.thanh_tien_ot, g.totals.suat, g.totals.thanh_tien_com, subtotal, '']);
-        // blank row between groups
+        overallTotal += g.thanhTien;
+        rowsOut.push([
+          'THÀNH TIỀN',
+          '',
+          '',
+          '',
+          g.totals.gio,
+          g.totals.thanh_tien_cong,
+          g.totals.so_gio_ot,
+          g.totals.thanh_tien_ot,
+          g.totals.suat,
+          g.totals.thanh_tien_com,
+          '',
+        ]);
+        rowsOut.push(['TỔNG', '', '', '', '', g.thanhTien, '', '', '', '', '']);
         rowsOut.push([]);
       }
 
       // overall total row uses overallTotal (sum of per-employee subtotal)
-      rowsOut.push(['TỔNG CỘNG', '', '', '', '', '', '', '', '', overallTotal, '']);
+      rowsOut.push(['TỔNG CỘNG', '', '', '', '', overallTotal, '', '', '', '', '']);
 
       const ws = XLSXStyle.utils.aoa_to_sheet(rowsOut);
-      ws['!cols'] = [ {wch:12}, {wch:12}, {wch:24}, {wch:10}, {wch:14}, {wch:10}, {wch:14}, {wch:10}, {wch:14}, {wch:18} ];
+      ws['!cols'] = [ {wch:6}, {wch:12}, {wch:12}, {wch:24}, {wch:10}, {wch:14}, {wch:10}, {wch:14}, {wch:10}, {wch:14}, {wch:18} ];
 
       // simple styling
       const range = XLSXStyle.utils.decode_range(ws['!ref']);
@@ -161,7 +192,7 @@ export default function BangLuongChiTiet() {
           // header rows style
           if (R <= 3) {
             cell.s = { font:{bold:true, sz:12}, alignment:{horizontal:'left'} };
-          } else if (ws[cellRef].v === 'TỔNG' || ws[cellRef].v === 'TỔNG CỘNG') {
+          } else if (cell.v === 'THÀNH TIỀN' || cell.v === 'TỔNG' || cell.v === 'TỔNG CỘNG') {
             cell.s = { font:{bold:true}, fill:{fgColor:{rgb:'EEF6F2'}}, alignment:{horizontal:'right'} };
           } else if (R > 3 && typeof cell.v === 'number') {
             cell.s = { alignment:{horizontal:'right'} };
@@ -245,6 +276,7 @@ export default function BangLuongChiTiet() {
               <table className="table" style={{ width: '100%', minWidth: 980 }}>
                 <thead>
                   <tr>
+                    <th>STT</th>
                     <th>Ngày</th>
                     <th>Mã NV</th>
                     <th>Họ tên</th>
@@ -254,38 +286,57 @@ export default function BangLuongChiTiet() {
                     <th>Tiền OT</th>
                     <th>Suất cơm</th>
                     <th>Tiền cơm</th>
+                    <th>Ghi chú</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.rows.map((row, index) => (
-                    <tr key={`${row.ma_nv}-${row.ngay_cham_cong || index}`}>
-                      <td>{fmtDateVi(row.ngay_cham_cong)}</td>
-                      <td>{row.ma_nv}</td>
-                      <td>{row.ho_ten}</td>
-                      <td>{fmt(row.gio)}</td>
-                      <td>{fmt(row.thanh_tien_cong)}</td>
-                      <td>{fmt(row.so_gio_ot)}</td>
-                      <td>{fmt(row.thanh_tien_ot)}</td>
-                      <td>{fmt(row.suat)}</td>
-                      <td>{fmt(row.thanh_tien_com)}</td>
-                    </tr>
-                  ))}
-                  {!data.rows.length ? (
+                  {groupedRows.length ? groupedRows.map((g, groupIndex) => (
+                    <React.Fragment key={`${g.ma_nv || 'all'}-${groupIndex}`}>
+                      {g.rows.map((row, rowIndex) => (
+                        <tr key={`${g.ma_nv}-${groupIndex}-${rowIndex}`}>
+                          <td>{rowIndex + 1}</td>
+                          <td>{fmtDateVi(row.ngay_cham_cong)}</td>
+                          <td>{row.ma_nv}</td>
+                          <td>{row.ho_ten}</td>
+                          <td>{fmt(row.gio)}</td>
+                          <td>{fmt(row.thanh_tien_cong)}</td>
+                          <td>{fmt(row.so_gio_ot)}</td>
+                          <td>{fmt(row.thanh_tien_ot)}</td>
+                          <td>{fmt(row.suat)}</td>
+                          <td>{fmt(row.thanh_tien_com)}</td>
+                          <td>{row.ghi_chu || ''}</td>
+                        </tr>
+                      ))}
+                      <tr style={{ fontWeight: 700, background: '#f5f9f6' }}>
+                        <td>THÀNH TIỀN</td>
+                        <td colSpan="3" />
+                        <td>{fmt(g.totals.gio)}</td>
+                        <td>{fmt(g.totals.thanh_tien_cong)}</td>
+                        <td>{fmt(g.totals.so_gio_ot)}</td>
+                        <td>{fmt(g.totals.thanh_tien_ot)}</td>
+                        <td>{fmt(g.totals.suat)}</td>
+                        <td>{fmt(g.totals.thanh_tien_com)}</td>
+                        <td />
+                      </tr>
+                      <tr style={{ fontWeight: 700, background: '#eef6f2' }}>
+                        <td>TỔNG</td>
+                        <td colSpan="4" />
+                        <td>{fmt(g.thanhTien)}</td>
+                        <td colSpan="5" />
+                      </tr>
+                    </React.Fragment>
+                  )) : (
                     <tr>
-                      <td colSpan="9" style={{ textAlign: 'center', color: '#888' }}>Không có dữ liệu</td>
+                      <td colSpan="11" style={{ textAlign: 'center', color: '#888' }}>Không có dữ liệu</td>
                     </tr>
-                  ) : null}
+                  )}
                 </tbody>
-                {data.rows.length ? (
+                {groupedRows.length ? (
                   <tfoot>
                     <tr>
-                      <td colSpan="3" style={{ fontWeight: 700 }}>TỔNG</td>
-                      <td>{fmt(data.totals?.gio || 0)}</td>
-                      <td>{fmt(data.totals?.thanh_tien_cong || 0)}</td>
-                      <td>{fmt(data.totals?.so_gio_ot || 0)}</td>
-                      <td>{fmt(data.totals?.thanh_tien_ot || 0)}</td>
-                      <td>{fmt(data.totals?.suat || 0)}</td>
-                      <td>{fmt(data.totals?.thanh_tien_com || 0)}</td>
+                      <td colSpan="5" style={{ fontWeight: 700 }}>TỔNG CỘNG</td>
+                      <td>{fmt(overallTotal)}</td>
+                      <td colSpan="5" />
                     </tr>
                   </tfoot>
                 ) : null}
