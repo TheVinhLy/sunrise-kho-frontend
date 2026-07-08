@@ -109,12 +109,14 @@ export default function BangLuongChiTiet() {
       groups[key].totals.suat += Number(r.suat || 0);
       groups[key].totals.thanh_tien_com += Number(r.thanh_tien_com || 0);
     }
-    return Object.values(groups).map(g => ({
-      ...g,
-      rows: g.rows.sort((a,b) => String(a.ngay_cham_cong||'').localeCompare(String(b.ngay_cham_cong||''))),
-      thanhTien: Number(g.totals.thanh_tien_cong || 0) + Number(g.totals.thanh_tien_ot || 0) + Number(g.totals.thanh_tien_com || 0) + 25000,
-      totalAllowance: 25000,
-    }));
+    return Object.values(groups).map(g => {
+      const thanhTien = Number(g.totals.thanh_tien_cong || 0) + Number(g.totals.thanh_tien_ot || 0) + Number(g.totals.thanh_tien_com || 0);
+      return {
+        ...g,
+        rows: g.rows.sort((a,b) => String(a.ngay_cham_cong||'').localeCompare(String(b.ngay_cham_cong||''))),
+        thanhTien,
+      };
+    });
   }, [data.rows]);
 
   const summaryCards = useMemo(() => ([
