@@ -33,9 +33,21 @@ function getWeekBounds(weekToken) {
 }
 
 function fmtDateVi(value) {
-  const text = String(value || '');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return text || '-';
-  return `${text.slice(8, 10)}/${text.slice(5, 7)}/${text.slice(0, 4)}`;
+  const text = String(value || '').trim();
+  if (!text) return '-';
+  const isoMatch = text.match(/^(\d{4}-\d{2}-\d{2})/);
+  const datePart = isoMatch ? isoMatch[1] : text;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    return `${datePart.slice(8, 10)}/${datePart.slice(5, 7)}/${datePart.slice(0, 4)}`;
+  }
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) {
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const yyyy = parsed.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return text;
 }
 
 export default function BangLuongChiTiet() {
