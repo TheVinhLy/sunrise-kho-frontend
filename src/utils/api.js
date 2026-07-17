@@ -57,6 +57,7 @@ export const getNhanVien    = ()          => api('/api/nhan-vien');
 export const addNhanVien    = (data)      => api('/api/nhan-vien', { method: 'POST', body: data });
 export const updateNhanVien = (id, data)  => api(`/api/nhan-vien/${id}`, { method: 'PUT', body: data });
 export const deleteNhanVien = (id)        => api(`/api/nhan-vien/${id}`, { method: 'DELETE' });
+export const importNhanVien = (rows)      => api('/api/nhan-vien/import', { method: 'POST', body: { rows } });
 
 // Tham số lương
 export const getLuongThamSo    = ()          => api('/api/luong-tham-so');
